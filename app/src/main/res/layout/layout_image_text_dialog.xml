@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#80000000">
+
+    <TextView
+        android:id="@+id/tv_vol_id"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_marginBottom="10dp"
+        android:layout_marginTop="50dp"
+        android:text="VOL.2077"
+        android:textColor="#FFF" />
+
+
+    <ImageView
+        android:id="@+id/iv_image_text_dialog_image"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/tv_vol_id" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/iv_image_text_dialog_image"
+        android:layout_marginTop="10dp">
+
+        <TextView
+            android:id="@+id/tv_text_image_dialog_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="摄影"
+            android:textColor="#FFF" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="5dp"
+            android:layout_marginStart="5dp"
+            android:text="|"
+            android:textColor="#FFF" />
+
+        <TextView
+            android:id="@+id/tv_text_image_dialog_pic_info"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="网师园"
+            android:textColor="#FFF" />
+    </LinearLayout>
+
+
+</RelativeLayout>
