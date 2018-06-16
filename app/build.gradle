@@ -49,6 +49,8 @@ dependencies {
     compile 'com.lzy.net:okgo:3.0.4'
     //json 解析框架
     implementation 'com.google.code.gson:gson:2.8.5'
-    //jsoup
+    //jsoup 网页解析
     compile 'org.jsoup:jsoup:1.11.3'
+    //
+    implementation 'com.afollestad.material-dialogs:core:0.9.6.0'
 }

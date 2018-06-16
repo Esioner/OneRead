@@ -1,17 +1,11 @@
 package com.esioner.oneread.adapter;
 
-import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Color;
-import android.graphics.drawable.Drawable;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.RecyclerView;
-import android.util.DisplayMetrics;
-import android.util.Log;
-import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,7 +14,6 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.esioner.oneread.R;
-import com.esioner.oneread.activity.MainActivity;
 import com.esioner.oneread.activity.WebViewActivity;
 import com.esioner.oneread.bean.HomePageData;
 import com.esioner.oneread.bean.ContentHtmlData;
@@ -188,6 +181,7 @@ public class ContentRVAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
                     break;
                 case MOVIE:
                     categoryTitle = "- 影视 -";
+                    ((ArticleCommonViewHolder) holder).ivImage.setImageResource(R.drawable.movie_item_src);
                     break;
             }
             ((ArticleCommonViewHolder) holder).tvCategoryTitle.setText(categoryTitle);
@@ -196,7 +190,7 @@ public class ContentRVAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
             ((ArticleCommonViewHolder) holder).tvForward.setText(contentData.getForward());
             ((ArticleCommonViewHolder) holder).tvTitle.setText(contentData.getTitle());
         } else if (holder instanceof MusicHolder) {
-            ContentHtmlData data = homePageFragment.getmMusicDetailData();
+            ContentHtmlData data = homePageFragment.getMusicDetailData();
             if (data != null) {
                 ((MusicHolder) holder).tvMusicArticleaAuthorName.setText("文 / " + data.getData().getAuthorInfoList().get(0).getUserName());
                 ((MusicHolder) holder).tvMusicCategoryTitle.setText(data.getData().getMusicTitle());
@@ -221,7 +215,7 @@ public class ContentRVAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
             holder.itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    Dialog dialog = new Dialog(mContext,android.R.style.Theme_Black_NoTitleBar_Fullscreen);
+                    Dialog dialog = new Dialog(mContext, android.R.style.Theme_Black_NoTitleBar_Fullscreen);
 //                    AlertDialog dialog = builder.create();
 
 //                    DisplayMetrics dm = mContext.getResources().getDisplayMetrics();

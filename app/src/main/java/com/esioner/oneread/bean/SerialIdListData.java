@@ -9,14 +9,15 @@ import java.util.List;
  */
 
 public class SerialIdListData {
-    private List<SerialIdData> data;
-    private int res;
 
-    public List<SerialIdData> getData() {
+    private int res;
+    private SerialIdData data;
+
+    public SerialIdData getData() {
         return data;
     }
 
-    public void setData(List<SerialIdData> data) {
+    public void setData(SerialIdData data) {
         this.data = data;
     }
 
@@ -28,55 +29,36 @@ public class SerialIdListData {
         this.res = res;
     }
 
+
     public class SerialIdData {
-        @SerializedName("author_list")
-        private List<AuthorInfo> authorList;
-        private int category;
-        @SerializedName("content_id")
-        private int contentId;
-        private String cover;
-        @SerializedName("serial_list")
-        private String[] serialIds;
+        private String finished;
+        private String id;
         private String title;
+        @SerializedName("list")
+        private List<SerialIdInfo> serialIdInfoList;
 
-        public List<AuthorInfo> getAuthorList() {
-            return authorList;
+        public String getFinished() {
+            return finished;
         }
 
-        public void setAuthorList(List<AuthorInfo> authorList) {
-            this.authorList = authorList;
+        public void setFinished(String finished) {
+            this.finished = finished;
         }
 
-        public int getCategory() {
-            return category;
+        public String getId() {
+            return id;
         }
 
-        public void setCategory(int category) {
-            this.category = category;
+        public void setId(String id) {
+            this.id = id;
         }
 
-        public int getContentId() {
-            return contentId;
+        public List<SerialIdInfo> getSerialIdInfoList() {
+            return serialIdInfoList;
         }
 
-        public void setContentId(int contentId) {
-            this.contentId = contentId;
-        }
-
-        public String getCover() {
-            return cover;
-        }
-
-        public void setCover(String cover) {
-            this.cover = cover;
-        }
-
-        public String[] getSerialIds() {
-            return serialIds;
-        }
-
-        public void setSerialIds(String[] serialIds) {
-            this.serialIds = serialIds;
+        public void setSerialIdInfoList(List<SerialIdInfo> serialIdInfoList) {
+            this.serialIdInfoList = serialIdInfoList;
         }
 
         public String getTitle() {
@@ -86,5 +68,39 @@ public class SerialIdListData {
         public void setTitle(String title) {
             this.title = title;
         }
+
+        public class SerialIdInfo {
+            private String id;
+            private String number;
+            @SerializedName("serial_id")
+            private String serialId;
+
+            public String getId() {
+                return id;
+            }
+
+            public void setId(String id) {
+                this.id = id;
+            }
+
+            public String getNumber() {
+                return number;
+            }
+
+            public void setNumber(String number) {
+                this.number = number;
+            }
+
+            public String getSerialId() {
+                return serialId;
+            }
+
+            public void setSerialId(String serialId) {
+                this.serialId = serialId;
+            }
+        }
+
     }
+
+
 }

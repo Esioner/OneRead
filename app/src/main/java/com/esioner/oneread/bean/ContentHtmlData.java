@@ -64,6 +64,10 @@ public class ContentHtmlData {
         private String title;
         @SerializedName("web_url")
         private String webUrl;
+        @SerializedName("serial_id")
+        private String serialId;
+        @SerializedName("serial_title")
+        private String serialTitle;
 
         //本地属性
         private String musicTitle;
@@ -212,6 +216,22 @@ public class ContentHtmlData {
             this.webUrl = webUrl;
         }
 
+        public String getSerialId() {
+            return serialId;
+        }
+
+        public void setSerialId(String serialId) {
+            this.serialId = serialId;
+        }
+
+        public String getSerialTitle() {
+            return serialTitle;
+        }
+
+        public void setSerialTitle(String serialTitle) {
+            this.serialTitle = serialTitle;
+        }
+
         public class TagInfo {
             private String id;
             private String title;
@@ -232,5 +252,6 @@ public class ContentHtmlData {
                 this.title = title;
             }
         }
+
     }
 }

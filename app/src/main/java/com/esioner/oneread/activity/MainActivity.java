@@ -22,6 +22,8 @@ import com.baidu.location.LocationClientOption;
 import com.esioner.oneread.R;
 import com.esioner.oneread.fragment.AllPageFragment;
 import com.esioner.oneread.fragment.HomePageFragment;
+import com.esioner.oneread.utils.ConstantValue;
+import com.esioner.oneread.utils.SPUtils;
 import com.tbruyelle.rxpermissions2.RxPermissions;
 
 import java.lang.ref.WeakReference;
@@ -50,11 +52,6 @@ public class MainActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            WindowManager.LayoutParams localLayoutParams = getWindow().getAttributes();
-            localLayoutParams.flags = (WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS | localLayoutParams.flags);
-        }
-
         setContentView(R.layout.activity_main);
 
         //检查权限
@@ -65,6 +62,8 @@ public class MainActivity extends BaseActivity {
 
         initUi();
 
+        location = SPUtils.getInstance(mContext).getString(ConstantValue.WEATHER_LOCATION,"");
+
 //        switchFragment(homePageFragment);
     }
 
@@ -73,7 +72,7 @@ public class MainActivity extends BaseActivity {
         allPageFragment = new AllPageFragment();
 
         BottomNavigationBar navigationBar = findViewById(R.id.navigation_bar);
-        navigationBar.setMode(BottomNavigationBar.MODE_SHIFTING);
+        navigationBar.setMode(BottomNavigationBar.MODE_FIXED);
         navigationBar.setBackgroundStyle(BottomNavigationBar.BACKGROUND_STYLE_STATIC);
 
         navigationBar.setTabSelectedListener(new BottomNavigationBar.SimpleOnTabSelectedListener() {
@@ -95,9 +94,9 @@ public class MainActivity extends BaseActivity {
             }
         });
 
-        navigationBar.addItem(new BottomNavigationItem(R.drawable.one_fill, "一阅").setActiveColorResource(android.R.color.holo_green_light))
-                .addItem(new BottomNavigationItem(R.drawable.all_fill, "一阅").setActiveColorResource(android.R.color.holo_red_light))
-                .addItem(new BottomNavigationItem(R.drawable.me_fill, "一阅").setActiveColorResource(android.R.color.holo_blue_bright))
+        navigationBar.addItem(new BottomNavigationItem(R.drawable.one_fill, "ONE").setActiveColorResource(android.R.color.holo_green_light))
+                .addItem(new BottomNavigationItem(R.drawable.all_fill, "ALL").setActiveColorResource(android.R.color.holo_red_light))
+                .addItem(new BottomNavigationItem(R.drawable.me_fill, "ME").setActiveColorResource(android.R.color.holo_blue_bright))
                 .setFirstSelectedPosition(0)//设置默认选择item
                 .initialise();//初始化
         navigationBar.selectTab(0, true);
@@ -183,7 +182,6 @@ public class MainActivity extends BaseActivity {
         this.location = loc;
     }
 
-
     /**
      * 百度定位Api
      */
@@ -198,6 +196,10 @@ public class MainActivity extends BaseActivity {
                 Log.d(TAG, "onReceiveLocation: locationType = " + locationType);
                 final String city = loc.getCity();    //获取位置描述信息
                 Log.d(TAG, "city: " + city);
+
+                if (city != null) {
+                    SPUtils.getInstance(mContext).putString(ConstantValue.WEATHER_LOCATION, city);
+                }
 
                 mHandler.post(new Runnable() {
                     @Override

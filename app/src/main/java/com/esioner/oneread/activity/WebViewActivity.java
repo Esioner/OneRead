@@ -2,6 +2,7 @@ package com.esioner.oneread.activity;
 
 import android.app.Dialog;
 import android.content.Context;
+import android.graphics.drawable.AnimationDrawable;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
@@ -13,12 +14,14 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.afollestad.materialdialogs.MaterialDialog;
 import com.bumptech.glide.Glide;
 import com.esioner.oneread.R;
 import com.esioner.oneread.bean.ContentHtmlData;
@@ -26,6 +29,7 @@ import com.esioner.oneread.bean.SerialIdListData;
 import com.esioner.oneread.utils.HttpUtils;
 import com.esioner.oneread.utils._URL;
 import com.google.gson.Gson;
+import com.lzy.okgo.callback.StringCallback;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -33,15 +37,14 @@ import org.jsoup.nodes.Element;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
-import java.util.Arrays;
-
-import okhttp3.Response;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by Esioner on 2018/6/14.
  */
 
-public class WebViewActivity extends BaseActivity {
+public class WebViewActivity extends BaseActivity implements View.OnClickListener {
     private static final String TAG = WebViewActivity.class.getSimpleName();
     /**
      * 文章带语音阅读
@@ -57,44 +60,70 @@ public class WebViewActivity extends BaseActivity {
     private LinearLayout likeView;
     private ImageView ivShareView;
     private WebSettings webSettings;
-
-    private WebViewActivityHandler mHandler = new WebViewActivityHandler(this);
-    private LinearLayout llMediaDetail;
-    private ImageView ivMediaCover;
-    //    private ProgressBar pbPlayProgress;
-    private TextView tvMediaType;
-    private TextView tvMediaSpeaker;
     private TextView tvCommentNum;
     private TextView tvLikeNum;
-
-    private Context mContext = this;
-    private boolean isPlayMedia = false;
-    private boolean isMediaPause = false;
-
+    private WebViewActivityHandler mHandler = new WebViewActivityHandler(this);
+    //音频
     private MediaPlayer player;
     private TextView tvMediaDuration;
     private Thread mediaPlayTimeThread;
+    private LinearLayout llMediaDetail;
+    private ImageView ivMediaCover;
+    private TextView tvMediaType;
+    private TextView tvMediaSpeaker;
+    private ImageView ivMediaPlayingBG;
+    private AnimationDrawable mediaPlayAnimationDrawable;
+
+    //连载
     private LinearLayout llSerialBottomBar;
     private LinearLayout serialNextPage;
     private LinearLayout serialChapterList;
     private LinearLayout serialPreviousPage;
-    private SerialIdListData mSerialIdListData;
-    private String serialId;
-    private int nextSerialId = -1;
-    private int prevSerialId = -1;
+    /**
+     * 当前页面的连载的页面id，是json中的id，不是serial_id
+     */
+    private String mSerialCurrPageId;
+    /**
+     * 连载的页面id list，根据这个id从接口中获取页面信息
+     */
+    private List<String> mSerialsIdList;
+    /**
+     * 连载文章列表加载完成
+     */
+    private boolean serialIDsIsFinish = false;
+    /**
+     * 文章内容获取完成
+     */
+    private boolean webViewDataIsFinish = false;
+    //音频
+    private boolean isPlayMedia = false;
+    private boolean isMediaPause = false;
+    //全局
+    private int pageCategory;
+    private Context mContext = this;
+    private String pageId;
+    private ContentHtmlData contentHtmlData;
+    private ImageView ivLoading;
+    private AnimationDrawable loadingAnimationDrawable;
+    private boolean isLoading = false;
+    private CheckBox cbCommentBarLike;
+    private boolean isLikeed = false;
+
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        String itemId = getIntent().getStringExtra("itemId");
-        int category = Integer.parseInt(getIntent().getStringExtra("category"));
-        Log.d(TAG, "onCreate: category = " + category);
-        Log.d(TAG, "onCreate: itemId = " + itemId);
+        pageId = getIntent().getStringExtra("itemId");
+
+        pageCategory = Integer.parseInt(getIntent().getStringExtra("category"));
+        Log.d(TAG, "onCreate: category = " + pageCategory);
+        Log.d(TAG, "onCreate: pageId = " + pageId);
         setContentView(R.layout.layout_webview_activity);
 
-        loadDetailContentById(category, itemId);
+        initView(pageCategory);
 
-        initView();
+        loadDetailContentById(pageCategory, pageId);
+
     }
 
 
@@ -144,50 +173,177 @@ public class WebViewActivity extends BaseActivity {
     }
 
     /**
-     * 初始化控件
+     * 点击事件
+     *
+     * @param v
      */
-    private void initView() {
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            //点击评论打开评论界面
+            case R.id.ll_comment_bar_comment:
+                Toast.makeText(mContext, "打开评论页面", Toast.LENGTH_SHORT).show();
+                break;
+            //点击喜欢按钮
+            case R.id.ll_comment_bar_like:
+                int praiseNum = Integer.parseInt(contentHtmlData.getData().getPraiseNum());
+                if (!isLikeed) {
+//                    Toast.makeText(mContext, "点击喜欢", Toast.LENGTH_SHORT).show();
+                    praiseNum = praiseNum + 1;
+                    contentHtmlData.getData().setPraiseNum(praiseNum + "");
+                    tvLikeNum.setText(contentHtmlData.getData().getPraiseNum());
+                    cbCommentBarLike.setChecked(true);
+                    isLikeed = true;
+                } else {
+//                    Toast.makeText(mContext, "你已选择喜欢", Toast.LENGTH_SHORT).show();
+                    praiseNum = praiseNum - 1;
+                    contentHtmlData.getData().setPraiseNum(praiseNum + "");
+                    tvLikeNum.setText(contentHtmlData.getData().getPraiseNum());
+                    cbCommentBarLike.setChecked(false);
+                    isLikeed = false;
+                }
+                break;
+            //点击分享按钮
+            case R.id.ll_comment_bar_share:
+                Toast.makeText(mContext, "点击分享", Toast.LENGTH_SHORT).show();
+                break;
+        }
+    }
+
+    /**
+     * 初始化控件
+     *
+     * @param category
+     */
+    private void initView(int category) {
         webView = findViewById(R.id.web_view);
-        commentView = findViewById(R.id.ll_comment_bar_comment);
-        likeView = findViewById(R.id.ll_comment_bar_like);
-        ivShareView = findViewById(R.id.ll_comment_bar_share);
+        ivLoading = findViewById(R.id.iv_webview_loading);
+        (findViewById(R.id.ll_comment_bar_comment)).setOnClickListener(this);
+        (findViewById(R.id.ll_comment_bar_like)).setOnClickListener(this);
+        (findViewById(R.id.ll_comment_bar_share)).setOnClickListener(this);
         tvCommentNum = findViewById(R.id.tv_comment_bar_comment_num);
+        cbCommentBarLike = findViewById(R.id.cb_comment_bar_like);
         tvLikeNum = findViewById(R.id.tv_comment_bar_like_num);
 
-        //媒体播放页面内容
-        llMediaDetail = findViewById(R.id.rl_bottom_bar_media_detail);
-        ivMediaCover = findViewById(R.id.iv_bottom_bar_media_cover);
-        tvMediaType = findViewById(R.id.tv_bottom_bar_media_type);
-        tvMediaSpeaker = findViewById(R.id.tv_bottom_bar_media_read_author_name);
-        tvMediaDuration = findViewById(R.id.tv_bottom_bar_media_time);
-        //连载页面内容
-        llSerialBottomBar = findViewById(R.id.ll_bottom_bar_serial_tool_bar);
-        serialNextPage = findViewById(R.id.ll_bottom_bar_serial_next);
-        serialChapterList = findViewById(R.id.ll_bottom_bar_serial_chapter_list);
-        serialPreviousPage = findViewById(R.id.ll_bottom_bar_serial_previous);
+        //根据 category 来选择需要加载的组件
+        switch (category) {
+            case TYPE_ARTICLE_WITH_SPEAKER:
+                //媒体播放页面内容
+                llMediaDetail = findViewById(R.id.rl_bottom_bar_media_detail);
+                ivMediaCover = findViewById(R.id.iv_bottom_bar_media_cover);
+                tvMediaType = findViewById(R.id.tv_bottom_bar_media_type);
+                tvMediaSpeaker = findViewById(R.id.tv_bottom_bar_media_read_author_name);
+                tvMediaDuration = findViewById(R.id.tv_bottom_bar_media_time);
+                ivMediaPlayingBG = findViewById(R.id.iv_bottom_bar_media_play_button);
+                //点击Media 栏
+                llMediaDetail.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        if (!isPlayMedia) {
+                            startPlayMedia(contentHtmlData.getData());
+                        } else if (isPlayMedia) {
+                            pausePlayMedia();
+                        }
+                    }
+                });
+                break;
+            case TYPE_SERIAL:
+                //连载页面内容
+                llSerialBottomBar = findViewById(R.id.ll_bottom_bar_serial_tool_bar);
+                serialNextPage = findViewById(R.id.ll_bottom_bar_serial_next);
+                serialChapterList = findViewById(R.id.ll_bottom_bar_serial_chapter_list);
+                serialPreviousPage = findViewById(R.id.ll_bottom_bar_serial_previous);
+                //连载底部工具栏点击事件
+                //打开连载页面
+                serialChapterList.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        if (serialIDsIsFinish && webViewDataIsFinish) {
 
+                            new MaterialDialog.Builder(mContext)
+                                    .title("章节列表")
+                                    .items(mSerialsIdList)
+                                    .itemsCallback(new MaterialDialog.ListCallback() {
+                                        @Override
+                                        public void onSelection(MaterialDialog dialog, View view, int which, CharSequence text) {
+                                            Log.d(TAG, "onItemClick: serialId = " + mSerialsIdList.get(which));
+                                            loadDetailContentById(2, mSerialsIdList.get(which));
+                                            dialog.dismiss();
+                                        }
+                                    })
+                                    .show();
+                        } else {
+                            Toast.makeText(mContext, "数据正在加载，请稍后再试", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+                serialNextPage.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Log.d(TAG, "onClick: 点击下一页");
+                        Log.d(TAG, "onClick: " + serialIDsIsFinish + "\t" + webViewDataIsFinish);
+
+                        if (serialIDsIsFinish && webViewDataIsFinish) {
+                            int currPosition;
+                            if (mSerialsIdList.contains(mSerialCurrPageId)) {
+                                currPosition = mSerialsIdList.indexOf(mSerialCurrPageId);
+                                Log.d(TAG, "onClick: currPosition = " + currPosition);
+                                //如果 当前位置等于最后一章节的位置
+                                if (currPosition == (mSerialsIdList.size() - 1)) {
+                                    Toast.makeText(mContext, "已经是最后一章，请等待更新", Toast.LENGTH_SHORT).show();
+                                } else if (currPosition >= 0 && currPosition < (mSerialsIdList.size() - 1)) {
+                                    loadDetailContentById(TYPE_SERIAL, mSerialsIdList.get(currPosition + 1));
+                                }
+                            } else {
+                                Log.d(TAG, "onClick: curr不存在");
+                            }
+                        } else {
+                            Toast.makeText(mContext, "数据正在加载，请稍后再试", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+                serialPreviousPage.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Log.d(TAG, "onClick: 点击上一页");
+                        Log.d(TAG, "onClick: " + serialIDsIsFinish + "\t" + webViewDataIsFinish);
+                        if (serialIDsIsFinish && webViewDataIsFinish) {
+                            int currPosition;
+                            Log.d(TAG, "onClick: " + mSerialsIdList);
+                            Log.d(TAG, "onClick: " + mSerialCurrPageId);
+                            if (mSerialsIdList.contains(mSerialCurrPageId)) {
+                                currPosition = mSerialsIdList.indexOf(mSerialCurrPageId);
+                                Log.d(TAG, "onClick: currPosition = " + currPosition);
+                                //如果 当前位置等于第一章节的位置
+                                if (currPosition == 0) {
+                                    Toast.makeText(mContext, "已经是第一章", Toast.LENGTH_SHORT).show();
+                                } else if (currPosition > 0 && currPosition <= (mSerialsIdList.size() - 1)) {
+                                    loadDetailContentById(TYPE_SERIAL, mSerialsIdList.get(currPosition - 1));
+                                }
+                            } else {
+                                Log.d(TAG, "onClick: curr不存在");
+                            }
+                        } else {
+                            Toast.makeText(mContext, "数据正在加载，请稍后再试", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+                break;
+        }
 
         //声明WebSettings子类
         webSettings = webView.getSettings();
-
         //如果访问的页面中要与Javascript交互，则webview必须设置支持Javascript
-        webSettings.setJavaScriptEnabled(true);
         // 若加载的 html 里有JS 在执行动画等操作，会造成资源浪费（CPU、电量）
         // 在 onStop 和 onResume 里分别把 setJavaScriptEnabled() 给设置成 false 和 true 即可
-
+        webSettings.setJavaScriptEnabled(true);
         //设置自适应屏幕，两者合用
         webSettings.setUseWideViewPort(true); //将图片调整到适合webview的大小
         webSettings.setLoadWithOverviewMode(true); // 缩放至屏幕的大小
-
         //缩放操作
         webSettings.setSupportZoom(false); //支持缩放，默认为true。是下面那个的前提。
-//        webSettings.setBuiltInZoomControls(true); //设置内置的缩放控件。若为false，则该WebView不可缩放
-//        webSettings.setDisplayZoomControls(false); //隐藏原生的缩放控件
-
         //其他细节操作
         webSettings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK); //关闭webview中缓存
-//        webSettings.setAllowFileAccess(true); //设置可以访问文件
-//        webSettings.setJavaScriptCanOpenWindowsAutomatically(true); //支持通过JS打开新窗口
         webSettings.setLoadsImagesAutomatically(true); //支持自动加载图片
         webSettings.setDefaultTextEncodingName("utf-8");//设置编码格式
     }
@@ -199,67 +355,83 @@ public class WebViewActivity extends BaseActivity {
      * @param itemId
      */
     private void loadDetailContentById(final int category, final String itemId) {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
+        //开始刷新
+        startLoading();
+        //先将控制变量进行初始化
+        serialIDsIsFinish = false;
+        webViewDataIsFinish = false;
 
-                    //如果是连载，加载连载id列表
-                    Log.d(TAG, "run:category = " + category);
-                    Log.d(TAG, "run: itemId = " + itemId);
-                    if (category == 2) {
-                        serialId = itemId;
-                        getSerialIds(serialId);
-                    }
-                    Response response = HttpUtils.getSync(_URL.getHtmlContent(category, itemId));
+        //加载数据
+        try {
+            String url = _URL.getHtmlContent(category, itemId);
+            StringCallback callback = new StringCallback() {
+                @Override
+                public void onSuccess(com.lzy.okgo.model.Response<String> response) {
                     if (response.code() == 200) {
-                        String jsonString = response.body().string();
-                        final ContentHtmlData htmlData = new Gson().fromJson(jsonString, ContentHtmlData.class);
-
-                        mHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                showData(htmlData);
-                            }
-                        });
+                        String jsonString = response.body();
+                        contentHtmlData = new Gson().fromJson(jsonString, ContentHtmlData.class);
+                        pageCategory = contentHtmlData.getData().getCategory();
+                        //如果是连载，加载连载id列表
+                        if (category == TYPE_SERIAL) {
+                            //获取连载 id
+                            String id = contentHtmlData.getData().getSerialId();
+                            mSerialCurrPageId = contentHtmlData.getData().getId();
+                            loadSerialArrById(id);
+                        }
+                        pageId = contentHtmlData.getData().getId();
+                        webViewDataIsFinish = true;
+                        //数据展示并处理
+                        showData(contentHtmlData);
                     }
-                } catch (Throwable throwable) {
-                    throwable.printStackTrace();
                 }
-            }
-        }).start();
+            };
+            HttpUtils.getAsync(url, callback);
+        } catch (Throwable throwable) {
+            throwable.printStackTrace();
+        }
+
     }
 
     /**
+     * 连载需要，根据连载文章的id获取所有连载的id
+     *
      * @param serialId
      */
-    private void getSerialIds(String serialId) {
-        try {
-            String url = _URL.getSerialIdList(serialId);
-            Log.d(TAG, "getSerialIds: url = " + url);
-            Response responseSerialIdList = HttpUtils.getSync(url);
-            if (responseSerialIdList.code() == 200) {
-                String serialIdJson = responseSerialIdList.body().string();
-                mSerialIdListData = new Gson().fromJson(serialIdJson, SerialIdListData.class);
-                String[] serialIds = mSerialIdListData.getData().get(0).getSerialIds();
-                Log.d(TAG, "getSerialIds: " + Arrays.toString(serialIds));
-                Log.d(TAG, "getSerialIds: arr.length = " + serialIds.length);
-                Log.d(TAG, "getSerialIds: " + serialId);
-                for (int i = 0; i < serialIds.length; i++) {
-                    if (serialId.equals(serialIds[i])) {
-                        Log.d(TAG, "getSerialIds: serialId = " + serialIds[i]);
-                        nextSerialId = i + 1;
-                        prevSerialId = i - 1;
-                        Log.d(TAG, "getSerialIds: i = " + i);
-                        Log.d(TAG, "getSerialIds: nextSerialId = " + nextSerialId);
-                        Log.d(TAG, "getSerialIds: prevSerialId = " + prevSerialId);
+    private void loadSerialArrById(String serialId) {
+        Log.d(TAG, "loadSerialArrById: currentThread = " + Thread.currentThread().getName());
+        //拼接 URL
+        String url = _URL.getSerialIdList(serialId);
+        Log.d(TAG, "loadSerialArrById: url = " + url);
+
+        StringCallback callback = new StringCallback() {
+            @Override
+            public void onSuccess(com.lzy.okgo.model.Response<String> response) {
+                Log.d(TAG, "loadSerialArrById onResponse: currentThread = " + Thread.currentThread().getName());
+                if (response.code() == 200) {
+                    String serialIdJson = response.body();
+                    Log.d(TAG, "loadSerialArrById onSuccess: serialIdJson = \n" + serialIdJson);
+                    SerialIdListData mSerialIdListData = new Gson().fromJson(serialIdJson, SerialIdListData.class);
+                    String serialFinished = mSerialIdListData.getData().getFinished();
+                    Log.d(TAG, "onSuccess: serialFinished = " + serialFinished);
+                    String serialTitle = mSerialIdListData.getData().getTitle();
+                    Log.d(TAG, "onSuccess: serialTitle = " + serialTitle);
+                    String id = mSerialIdListData.getData().getId();
+                    Log.d(TAG, "onSuccess: id = " + id);
+                    //遍历list ,取出 id 留着下一页或者上一页用
+                    List<SerialIdListData.SerialIdData.SerialIdInfo> serialIdDataList = mSerialIdListData.getData().getSerialIdInfoList();
+                    if (mSerialsIdList == null) {
+                        mSerialsIdList = new ArrayList<>();
+                    } else if (mSerialsIdList.size() != 0) {
+                        mSerialsIdList.clear();
                     }
+                    for (SerialIdListData.SerialIdData.SerialIdInfo info : serialIdDataList) {
+                        mSerialsIdList.add(info.getId());
+                    }
+                    serialIDsIsFinish = true;
                 }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
+        };
+        HttpUtils.getAsync(url, callback);
     }
 
     /**
@@ -279,117 +451,24 @@ public class WebViewActivity extends BaseActivity {
             htmlType = TYPE_SERIAL;
             llSerialBottomBar.setVisibility(View.VISIBLE);
         }
-
-
-        mediaPlayBottomBarClickListener(htmlData);
-        serialBottomBarClickListener(htmlData);
-
         tvCommentNum.setText(htmlData.getData().getCommentNum() + "");
         tvLikeNum.setText(htmlData.getData().getPraiseNum() + "");
         Log.d(TAG, "showData: getAudio = " + htmlData.getData().getAudio().trim());
-
         //加载html
         final int finalHtmlType = htmlType;
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                final String htmlDetail = parseHtmlByJsoup(htmlData.getData().getHtmlContent(), finalHtmlType);
-                mHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        webView.loadData(htmlDetail, "text/html", "UTF-8");
-                    }
-                });
-            }
-        }).start();
-
+        String htmlDetail = parseHtmlByJsoup(htmlData.getData().getHtmlContent(), finalHtmlType);
+        webView.loadData(htmlDetail, "text/html", "UTF-8");
+        //停止刷新
+        stopLoading();
     }
 
     /**
-     * 音频播放底部工具栏
+     * 使用 Jsoup 解析网页，删除不需要的标签
      *
-     * @param htmlData
+     * @param html     网页内容
+     * @param htmlType 当前文章类型
+     * @return
      */
-    private void mediaPlayBottomBarClickListener(final ContentHtmlData htmlData) {
-        //点击Media 栏
-        llMediaDetail.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (!isPlayMedia) {
-                    startPlayMedia(htmlData.getData());
-                } else if (isPlayMedia) {
-                    pausePlayMedia();
-                }
-            }
-        });
-    }
-
-    /**
-     * 连载界面底部工具栏按键点击事件
-     *
-     * @param htmlData
-     */
-    private void serialBottomBarClickListener(ContentHtmlData htmlData) {
-        //打开连载页面
-        //连载底部工具栏点击事件
-        serialChapterList.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                final String[] serialIds = mSerialIdListData.getData().get(0).getSerialIds();
-                if (serialIds != null) {
-                    final Dialog dialog = new Dialog(mContext);
-                    ListView listView = new ListView(mContext);
-                    ArrayAdapter<String> adapter = new ArrayAdapter<String>(mContext, android.R.layout.simple_list_item_1, serialIds);
-                    listView.setAdapter(adapter);
-                    listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                        @Override
-                        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                            Log.d(TAG, "onItemClick: serialId = " + serialIds[position]);
-                            loadDetailContentById(2, serialIds[position]);
-                            dialog.dismiss();
-                        }
-                    });
-                    dialog.setContentView(listView);
-                    dialog.show();
-                } else {
-                    Toast.makeText(mContext, "数据正在加载，请稍后再试", Toast.LENGTH_SHORT).show();
-                    new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            getSerialIds(serialId);
-                        }
-                    }).start();
-                }
-            }
-        });
-        serialNextPage.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String[] serialIds = mSerialIdListData.getData().get(0).getSerialIds();
-                Log.d(TAG, "onClick: serialIds = " + Arrays.toString(serialIds));
-                Log.d(TAG, "onClick: nextSerialId = " + nextSerialId);
-                if (nextSerialId >= serialIds.length) {
-                    Toast.makeText(mContext, "已经是最后一章", Toast.LENGTH_SHORT).show();
-                } else if (nextSerialId < serialIds.length && nextSerialId >= 0) {
-                    loadDetailContentById(2, serialIds[nextSerialId]);
-                }
-            }
-        });
-        serialPreviousPage.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String[] serialIds = mSerialIdListData.getData().get(0).getSerialIds();
-                Log.d(TAG, "onClick: serialIds = " + Arrays.toString(serialIds));
-                Log.d(TAG, "onClick: prevSerialId = " + prevSerialId);
-                if (prevSerialId <= 0) {
-                    Toast.makeText(mContext, "已经是第一章了", Toast.LENGTH_SHORT).show();
-                } else if (prevSerialId < serialIds.length && prevSerialId >= 0) {
-                    loadDetailContentById(2, serialIds[prevSerialId]);
-                }
-            }
-        });
-    }
-
     public String parseHtmlByJsoup(String html, int htmlType) {
         Document document = Jsoup.parse(html);
 //        Log.d(TAG, "run: document = \n" + document.toString());
@@ -417,15 +496,16 @@ public class WebViewActivity extends BaseActivity {
      */
     private void pausePlayMedia() {
         if (player != null && player.isPlaying()) {
+            stopPlayMediaAnim();
+            player.pause();
             isPlayMedia = false;
             isMediaPause = true;
-            player.pause();
             Toast.makeText(mContext, "已暂停", Toast.LENGTH_SHORT).show();
         }
     }
 
     /**
-     * 开始继续播放
+     * 开始||继续播放
      *
      * @param data
      */
@@ -451,6 +531,7 @@ public class WebViewActivity extends BaseActivity {
                     player.start();
                     Toast.makeText(mContext, "继续播放", Toast.LENGTH_SHORT).show();
                 }
+                startPlayMediaAnim();
             }
             isPlayMedia = true;
 
@@ -487,6 +568,61 @@ public class WebViewActivity extends BaseActivity {
     }
 
     /**
+     * 开始刷新
+     */
+    private void startLoading() {
+        if (!isLoading) {
+            ivLoading.setVisibility(View.VISIBLE);
+            ivLoading.setImageResource(R.drawable.anim_loading_article);
+            if (loadingAnimationDrawable == null) {
+                loadingAnimationDrawable = (AnimationDrawable) ivLoading.getDrawable();
+            }
+            loadingAnimationDrawable.start();
+            isLoading = true;
+        }
+    }
+
+    /**
+     * 停止刷新
+     */
+    private void stopLoading() {
+        if (isLoading) {
+            if (loadingAnimationDrawable != null) {
+                loadingAnimationDrawable.stop();
+                ivLoading.setVisibility(View.GONE);
+                isLoading = false;
+            }
+        }
+    }
+
+    /**
+     * 开始音频播放动画
+     */
+    private void startPlayMediaAnim() {
+        ivMediaPlayingBG.setImageResource(R.drawable.anim_media_playing);
+        if (!isPlayMedia) {
+            if (mediaPlayAnimationDrawable == null) {
+                mediaPlayAnimationDrawable = (AnimationDrawable) ivMediaPlayingBG.getDrawable();
+            }
+            mediaPlayAnimationDrawable.start();
+            Log.d(TAG, "startPlayMediaAnim: 正在播放");
+        }
+    }
+
+    /**
+     * 停止音频播放动画
+     */
+    private void stopPlayMediaAnim() {
+        if (isPlayMedia) {
+            if (mediaPlayAnimationDrawable != null) {
+                mediaPlayAnimationDrawable.stop();
+                ivMediaPlayingBG.setImageResource(R.drawable.anim_media_play_03);
+                Log.d(TAG, "stopPlayMediaAnim: 已停止");
+            }
+        }
+    }
+
+    /**
      * 防止内存泄漏的 Handler
      */
     public static class WebViewActivityHandler extends Handler {
@@ -502,5 +638,4 @@ public class WebViewActivity extends BaseActivity {
             super.handleMessage(msg);
         }
     }
-
 }

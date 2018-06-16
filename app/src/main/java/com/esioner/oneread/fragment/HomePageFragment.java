@@ -460,18 +460,36 @@ public class HomePageFragment extends Fragment {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
     }
 
-    public ContentHtmlData getmMusicDetailData() {
+    public ContentHtmlData getMusicDetailData() {
         if (mMusicDetailData != null) {
             Document document = Jsoup.parse(mMusicDetailData.getData().getHtmlContent());
             Element element = document.getElementsByClass("one-music-header-info").get(0);
-            String musicTitle = element.text();
-            Log.d(TAG, "getmMusicDetailData: musicTitle = " + musicTitle);
-            mMusicDetailData.getData().setMusicTitle(musicTitle);
+            final String musicTitle = element.text();
+            Log.d(TAG, "getMusicDetailData: musicTitle = " + musicTitle);
+            mHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    mMusicDetailData.getData().setMusicTitle(musicTitle);
+                }
+            });
         }
         return this.mMusicDetailData;
+    }
+
+    /**
+     * 开始加载
+     */
+    private void startLoading() {
+
+    }
+
+    /**
+     * 停止加载
+     */
+    private void stopLoading() {
+
     }
 
     public MainActivity getmActivity() {

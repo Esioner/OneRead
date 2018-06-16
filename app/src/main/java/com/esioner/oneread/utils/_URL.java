@@ -83,13 +83,12 @@ public class _URL {
     }
 
     /**
-     * /api/relatedforwebview/serial/648
+     * http://v3.wufazhuce.com:8000/api/serial/list/
      * 获取连载列表
-     *
      * @param serialId
      * @return
      */
     public static String getSerialIdList(String serialId) {
-        return BASE_URL + "relatedforwebview/serial/" + serialId;
+        return BASE_URL + "serial/list/" + serialId;
     }
 }

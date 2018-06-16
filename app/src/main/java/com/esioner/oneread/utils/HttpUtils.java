@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import okhttp3.Callback;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -33,9 +34,25 @@ public class HttpUtils {
         return response;
     }
 
+    /**
+     * 阻塞线程获取数据 GET方式
+     *
+     * @param url
+     * @return
+     * @throws IOException
+     */
     public static Response getSync(String url) throws IOException {
         Response response = OkGo.<String>get(url).execute();
         return response;
+    }
+
+    /**
+     * 异步获取数据 GET方式
+     * @param url
+     * @param callback
+     */
+    public static void getAsync(String url, com.lzy.okgo.callback.Callback<String> callback) {
+        OkGo.<String>get(url).execute(callback);
     }
 
     public static void download(String url, String filePath, DownloadListener listener) {

@@ -7,6 +7,6 @@ import okhttp3.Response;
  */
 
 public interface HttpListener {
-    void connectSuccess(Response response);
-    void connectFail(Exception e);
+    void onSuccess(Response response);
+    void onFail(Exception e);
 }
