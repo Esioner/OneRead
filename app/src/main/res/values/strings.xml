@@ -1,3 +1,4 @@
 <resources>
-    <string name="app_name">OneRead</string>
+    <string name="app_name">简阅</string>
+    <string name="tv_filled_string">...</string>
 </resources>

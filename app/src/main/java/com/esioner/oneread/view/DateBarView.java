@@ -4,7 +4,6 @@ import android.content.Context;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
-import android.view.View;
 import android.widget.LinearLayout;
 
 import com.esioner.oneread.R;
@@ -20,7 +19,7 @@ public class DateBarView extends LinearLayout{
 
     public DateBarView(Context context, @Nullable AttributeSet attrs) {
         super(context,attrs);
-        LayoutInflater.from(context).inflate(R.layout.layout_datebar_view,this);
+        LayoutInflater.from(context).inflate(R.layout.layout_home_page_date_bar,this);
 
     }
 

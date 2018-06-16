@@ -26,6 +26,7 @@ import com.esioner.oneread.utils.ConstantValue;
 import com.esioner.oneread.utils.SPUtils;
 import com.tbruyelle.rxpermissions2.RxPermissions;
 
+import java.io.File;
 import java.lang.ref.WeakReference;
 
 import io.reactivex.functions.Consumer;
@@ -57,12 +58,18 @@ public class MainActivity extends BaseActivity {
         //检查权限
         String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION};
         checkCurrentPermission(permissions);
+
+        //检查文件路径
+        File file = new File(ConstantValue.FILE_PATH);
+        if (!file.exists()) {
+            file.mkdir();
+        }
         //获取地理位置
         getCurrentLocation();
 
         initUi();
 
-        location = SPUtils.getInstance(mContext).getString(ConstantValue.WEATHER_LOCATION,"");
+        location = SPUtils.getInstance(mContext).getString(ConstantValue.WEATHER_LOCATION, "");
 
 //        switchFragment(homePageFragment);
     }

@@ -1,25 +1,46 @@
 package com.esioner.oneread.adapter;
 
+import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.PopupWindow;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.afollestad.materialdialogs.DialogAction;
+import com.afollestad.materialdialogs.MaterialDialog;
+import com.ashokvarma.bottomnavigation.utils.Utils;
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.target.Target;
 import com.esioner.oneread.R;
 import com.esioner.oneread.activity.WebViewActivity;
 import com.esioner.oneread.bean.HomePageData;
 import com.esioner.oneread.bean.ContentHtmlData;
 import com.esioner.oneread.fragment.HomePageFragment;
+import com.esioner.oneread.listener.DownloadListener;
+import com.esioner.oneread.utils.ConstantValue;
+import com.esioner.oneread.utils.FileUtils;
+import com.esioner.oneread.utils.HttpUtils;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
@@ -135,18 +156,18 @@ public class ContentRVAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
         RecyclerView.ViewHolder holder = null;
         switch (viewType) {
             case IMAGE_TEXT:
-                view = LayoutInflater.from(parent.getContext()).inflate(R.layout.layout_text_image_item, parent, false);
+                view = LayoutInflater.from(parent.getContext()).inflate(R.layout.layout_recyclerview_item_text_image, parent, false);
                 holder = new ImageWithTextViewHolder(view);
                 break;
             case ESSAY:
             case SERIAL:
             case MOVIE:
             case QUESTION:
-                view = LayoutInflater.from(parent.getContext()).inflate(R.layout.layout_content_item, parent, false);
+                view = LayoutInflater.from(parent.getContext()).inflate(R.layout.layout_recyclerview_item_common_view, parent, false);
                 holder = new ArticleCommonViewHolder(view);
                 break;
             case MUSIC:
-                view = LayoutInflater.from(parent.getContext()).inflate(R.layout.layout_music_item, parent, false);
+                view = LayoutInflater.from(parent.getContext()).inflate(R.layout.layout_recyclerview_item_music, parent, false);
                 holder = new MusicHolder(view);
                 break;
             default:
@@ -215,30 +236,87 @@ public class ContentRVAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
             holder.itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    Dialog dialog = new Dialog(mContext, android.R.style.Theme_Black_NoTitleBar_Fullscreen);
-//                    AlertDialog dialog = builder.create();
+                    final Dialog dialog = new Dialog(mContext, R.style.Dialog_Fullscreen);
 
-//                    DisplayMetrics dm = mContext.getResources().getDisplayMetrics();
-//                    int width = dm.widthPixels;
-//                    int height = dm.heightPixels;
-//                    //设置dialog的宽高为屏幕的宽高
-//                    ViewGroup.LayoutParams layoutParams = new ViewGroup.LayoutParams(width, height);
-
-                    View view = LayoutInflater.from(mContext).inflate(R.layout.layout_image_text_dialog, null, false);
+                    final View view = LayoutInflater.from(mContext).inflate(R.layout.layout_image_text_detail, null, false);
                     TextView tvVOLId = view.findViewById(R.id.tv_vol_id);
                     TextView tvTittle = view.findViewById(R.id.tv_text_image_dialog_title);
                     TextView tvPicInfo = view.findViewById(R.id.tv_text_image_dialog_pic_info);
-                    ImageView iv = view.findViewById(R.id.iv_image_text_dialog_image);
-
-
+                    final ImageView iv = view.findViewById(R.id.iv_image_text_dialog_image);
                     tvVOLId.setText(contentData.getVolume());
                     tvTittle.setText(contentData.getTitle());
                     tvPicInfo.setText(contentData.getPicInfo());
                     Glide.with(mContext).load(contentData.getImgUrl()).into(iv);
+                    view.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            dialog.dismiss();
+                        }
+                    });
+                    iv.setOnLongClickListener(new View.OnLongClickListener() {
+                        @Override
+                        public boolean onLongClick(View v) {
+                            //弹出对话框
+                            new MaterialDialog.Builder(mContext)
+                                    .title("更多操作")
+                                    .positiveText("保存图片")
+                                    .onPositive(new MaterialDialog.SingleButtonCallback() {
+                                        @SuppressLint("CheckResult")
+                                        @Override
+                                        public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                                            Toast.makeText(mContext, "保存图片", Toast.LENGTH_SHORT).show();
+                                            new Thread(new Runnable() {
+                                                @Override
+                                                public void run() {
+                                                    String filePath = ConstantValue.FILE_PATH + File.separator + contentData.getPicInfo() + ".jpg";
+                                                    HttpUtils.download(contentData.getImgUrl(), filePath, new DownloadListener() {
+                                                        @Override
+                                                        public void onStart() {
+                                                            Log.d(TAG, "onStart: 开始下载");
+                                                        }
 
+                                                        @Override
+                                                        public void onFinish(final String filePath) {
+                                                            Log.d(TAG, "onFinish: 已完成");
+                                                            homePageFragment.getmActivity().runOnUiThread(new Runnable() {
+                                                                @Override
+                                                                public void run() {
+                                                                    Toast.makeText(mContext, "已成功下载至\n" + filePath, Toast.LENGTH_SHORT).show();
+                                                                }
+                                                            });
+                                                        }
 
+                                                        @Override
+                                                        public void onProgress(int progress) {
+                                                            Log.d(TAG, "onProgress: progress = " + progress);
+                                                        }
+
+                                                        @Override
+                                                        public void onError(Exception e) {
+                                                            Log.d(TAG, "onError: 任务出错");
+                                                            e.printStackTrace();
+                                                        }
+                                                    });
+                                                }
+                                            }).start();
+
+                                        }
+                                    })
+                                    .negativeText("取消")
+                                    .onNegative(new MaterialDialog.SingleButtonCallback() {
+                                        @Override
+                                        public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                                            dialog.dismiss();
+                                        }
+                                    }).show();
+
+                            return true;
+                        }
+                    });
                     dialog.setContentView(view);
                     dialog.setCancelable(true);
+                    dialog.setCanceledOnTouchOutside(true);
+                    dialog.getWindow().setWindowAnimations(R.style.DialogEnterAndExitAnimation);//设置Dialog动画
                     dialog.show();
 //                    dialog.getWindow().setBackgroundDrawable();
                 }

@@ -47,7 +47,7 @@ public class PastListDateRVAdapter extends RecyclerView.Adapter<RecyclerView.Vie
     public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View view;
         RecyclerView.ViewHolder holder;
-        view = LayoutInflater.from(parent.getContext()).inflate(R.layout.layout_past_list_item, null, false);
+        view = LayoutInflater.from(parent.getContext()).inflate(R.layout.layout_past_list_rv_date_item, null, false);
         holder = new CommonViewHolder(view);
         return holder;
     }

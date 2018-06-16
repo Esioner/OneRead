@@ -48,7 +48,7 @@ public class PastListMonthRVAdapter extends RecyclerView.Adapter<PastListMonthRV
 
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.layout_past_list_time_line_item, parent, false);
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.layout_past_list_rv_time_line_item, parent, false);
         ViewHolder holder = new ViewHolder(view);
         return holder;
     }
