@@ -8,7 +8,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.widget.SwipeRefreshLayout;
-import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -17,25 +16,27 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
 import com.esioner.oneread.R;
 import com.esioner.oneread.activity.MainActivity;
 import com.esioner.oneread.adapter.ContentRVAdapter;
 import com.esioner.oneread.adapter.PastListMonthRVAdapter;
-import com.esioner.oneread.adapter.PastListDateRVAdapter;
-import com.esioner.oneread.adapter.SpaceItemDecoration;
 import com.esioner.oneread.bean.HomePageData;
 import com.esioner.oneread.bean.ContentHtmlData;
 import com.esioner.oneread.bean.PastDate;
 import com.esioner.oneread.bean.PastListData;
+import com.esioner.oneread.utils.CommonUtils;
 import com.esioner.oneread.utils.HttpUtils;
 import com.esioner.oneread.utils.TextFormatUtil;
 import com.esioner.oneread.utils._URL;
 import com.google.gson.Gson;
+import com.lzy.okgo.callback.StringCallback;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -44,7 +45,9 @@ import org.jsoup.nodes.Element;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import okhttp3.Response;
@@ -64,7 +67,6 @@ public class HomePageFragment extends Fragment {
     private HomePageData mHomePageData;
 
     private List<PastDate> pastDateList;
-    //    private List<PastListData.PastDateData> pastListDataList;
     private List<HomePageData.Data.ContentData> contentDataList;
     private List<HomePageData.Data.ContentData> todayHomePageDataList;
     private ContentHtmlData mMusicDetailData;
@@ -78,13 +80,15 @@ public class HomePageFragment extends Fragment {
     private TextView tvDay;
     private TextView tvYear;
     private RelativeLayout dateBar;
+    private ImageView ivWeatherIcon;
     private LinearLayout llArticleListView;
     private LinearLayout llPastListView;
     private RecyclerView rvPastList;
     private PastListMonthRVAdapter mPastListMonthRVAdapter;
     private RecyclerView rvContent;
-    private ContentRVAdapter mContentRVAdapter;
 
+
+    private ContentRVAdapter mContentRVAdapter;
     /**
      * 当前页面是否是往期列表
      * true 为是往期列表
@@ -93,8 +97,25 @@ public class HomePageFragment extends Fragment {
     /**
      * 当前位置
      */
-    private String location = "";
+    private String location;
     private SwipeRefreshLayout swipeRefreshLayout;
+    /**
+     * 当前显示的 menu 内容
+     */
+    private HomePageData.Data.ContentMenu contentMenuData;
+    /**
+     * 今天的日期
+     */
+    private String todayDate;
+    /**
+     * 当前的日期是否为今天
+     */
+    private boolean currentPageIsToday = true;
+    /**
+     * 当前页面显示的日期
+     */
+    private String currentShowDate;
+
 
     @Override
     public void onAttach(Context context) {
@@ -112,6 +133,11 @@ public class HomePageFragment extends Fragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        //获取当天的日期
+        Date date = new Date(System.currentTimeMillis());
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        todayDate = sdf.format(date);
+//        location = savedInstanceState.getString(ConstantValue.WEATHER_LOCATION);
         Log.d(TAG, "onCreate: ");
     }
 
@@ -129,7 +155,6 @@ public class HomePageFragment extends Fragment {
         Log.d(TAG, "onCreateView: ");
         view = inflater.inflate(R.layout.layout_fragment_home_page, container, false);
         //初始化数据列表
-//        pastListDataList = new ArrayList<>();
         contentDataList = new ArrayList<>();
         pastDateList = new ArrayList<>();
 
@@ -151,6 +176,7 @@ public class HomePageFragment extends Fragment {
         this.location = mActivity.getLocation();
         Log.d(TAG, "onActivityCreated: location = " + location);
         String url = _URL.getArticleList(location);
+
         getArticleList(url);
     }
 
@@ -192,11 +218,12 @@ public class HomePageFragment extends Fragment {
         Log.d(TAG, "onDetach: ");
         super.onDetach();
     }
-
+    
     /**
      * 初始化控件
      */
     public void initUi() {
+        ivWeatherIcon = view.findViewById(R.id.iv_datebar_weather);
         llPastListView = view.findViewById(R.id.ll_past_list_view);
         llArticleListView = view.findViewById(R.id.ll_article_list_view);
         rvPastList = view.findViewById(R.id.rv_past_list);
@@ -206,15 +233,14 @@ public class HomePageFragment extends Fragment {
         tvTempTemperature = view.findViewById(R.id.tv_datebar_temperature);
         tvYear = view.findViewById(R.id.tv_year);
         tvMonth = view.findViewById(R.id.tv_month);
-        tvDay = view.findViewById(R.id.tv_day);
+        tvDay = view.findViewById(R.id.tv_date);
         dateBar = view.findViewById(R.id.date_bar);
         swipeRefreshLayout = view.findViewById(R.id.refresh_layout_home_page);
 
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                swipeRefreshLayout.setRefreshing(true);
-                getArticleList(_URL.getArticleList(location));
+                getArticleList(_URL.getOneDayArticleList(currentShowDate));
             }
         });
 
@@ -251,7 +277,7 @@ public class HomePageFragment extends Fragment {
             public void loadMore(String date) {
                 try {
                     String formatedDate = TextFormatUtil.getLastMonth(date);
-                    loadPastListDatas(formatedDate);
+                    loadPastListData(formatedDate);
                 } catch (ParseException e) {
                     e.printStackTrace();
                 }
@@ -273,13 +299,10 @@ public class HomePageFragment extends Fragment {
      *
      * @param data
      */
-    public void initData(HomePageData data) {
-        if (swipeRefreshLayout.isRefreshing()) {
-            swipeRefreshLayout.setRefreshing(false);
-        }
+    public void initDataToUi(HomePageData data) {
         mHomePageData = data;
         String dateString = data.getData().getDate();
-        Log.d(TAG, "initData: date = " + dateString);
+        Log.d(TAG, "initDataToUi: date = " + dateString);
 
         String[] dateArr = TextFormatUtil.getDateBarDateArray(dateString);
         if (dateArr.length != 0) {
@@ -291,6 +314,11 @@ public class HomePageFragment extends Fragment {
         tvTempCity.setText(weatherData.getCityName());
         tvTempClimate.setText(weatherData.getClimate());
         tvTempTemperature.setText(weatherData.getTemperature());
+        //根据传来的天气 icon 来选择天气的icon
+        Log.d(TAG, "initDataToUi: iconName = " + weatherData.getIcons().getDay());
+        int iconId = CommonUtils.getResourceIdByStringName(mContext, weatherData.getIcons().getDay());
+        Log.d(TAG, "initDataToUi: iconName = " + iconId);
+        Glide.with(mContext).load(iconId).into(ivWeatherIcon);
 
         //如果当前页面内容不为空，保存今天的信息，然后将获取的内容保存给contentData
         if (data.getData().getContentList().size() != 0) {
@@ -299,64 +327,46 @@ public class HomePageFragment extends Fragment {
         }
         contentDataList.addAll(data.getData().getContentList());
         mContentRVAdapter.notifyDataSetChanged();
+
+        stopLoading();
     }
+
 
     /**
      * 加载往期列表
      *
      * @param date
      */
-    public void loadPastListDatas(final String date) {
-        new Thread(new Runnable() {
+    public void loadPastListData(final String date) {
+        HttpUtils.getAsync(_URL.getPastList(date), new StringCallback() {
             @Override
-            public void run() {
-                try {
-                    Response response = HttpUtils.getSync(_URL.getPastList(date));
-                    int code = response.code();
-                    Log.d(TAG, "connectSuccess:获取往期列表 code = " + code);
-                    if (code == 200) {
-                        String jsonBody = response.body().string();
-                        Log.d(TAG, "connectSuccess: jsonBody = \n" + jsonBody);
-                        final PastListData pastListData = new Gson().fromJson(jsonBody, PastListData.class);
-                        boolean isContain = false;
-                        for (PastDate past : pastDateList) {
-                            if (date.equals(past.getDate())) {
-                                isContain = true;
-                            } else {
-                                isContain = false;
-                            }
+            public void onSuccess(com.lzy.okgo.model.Response<String> response) {
+                int code = response.code();
+                Log.d(TAG, "connectSuccess:获取往期列表 code = " + code);
+                if (code == 200) {
+                    String jsonBody = response.body();
+                    Log.d(TAG, "connectSuccess: jsonBody = \n" + jsonBody);
+                    PastListData pastListData = new Gson().fromJson(jsonBody, PastListData.class);
+                    boolean isContain = false;
+                    Log.d(TAG, "onSuccess: date = " + date);
+                    for (PastDate past : pastDateList) {
+                        if (date.equals(past.getDate())) {
+                            isContain = true;
+                        } else {
+                            isContain = false;
                         }
-                        if (!isContain) {
-                            PastDate pastDate = new PastDate();
-                            pastDate.setDate(date);
-                            pastDate.setPastDateDataList(pastListData.getData());
-
-                            pastDateList.add(pastDate);
-                        }
-//                        if (pastListDataList != null) {
-////                            pastListDataList.addAll(pastListData.getData());
-//                            Iterator iterator = pastListData.getData().iterator();
-//                            while (iterator.hasNext()) {
-//                                PastListData.PastDateData dateData = (PastListData.PastDateData) iterator.next();
-//                                if (!pastListDataList.contains(dateData)) {
-//                                    pastListDataList.add(dateData);
-//                                }
-//                            }
-//                        }
-                        mHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                //展示数据
-                                mPastListMonthRVAdapter.notifyItemChanged(pastDateList.size());
-//                                mPastListMonthRVAdapter.notifyDataSetChanged();
-                            }
-                        });
                     }
-                } catch (IOException e) {
-                    e.printStackTrace();
+                    if (!isContain) {
+                        PastDate pastDate = new PastDate();
+                        pastDate.setDate(date);
+                        pastDate.setPastDateDataList(pastListData.getData());
+                        pastDateList.add(pastDate);
+                    }
+                    //展示数据
+                    mPastListMonthRVAdapter.notifyItemChanged(pastDateList.size());
                 }
             }
-        }).start();
+        });
     }
 
 
@@ -366,10 +376,10 @@ public class HomePageFragment extends Fragment {
     public void showPastListView() {
         //判断往期列表是否有数据，如果没有，获取日期，加载数据
         if (pastDateList.size() <= 0) {
-            String date = mHomePageData.getData().getDate();
-            loadPastListDatas(date);
+            String date = TextFormatUtil.getFormatedDate(mHomePageData.getData().getDate(), TextFormatUtil.Y_M_D_H_M_S, TextFormatUtil.Y_M);
+            loadPastListData(date);
         }
-        //判断当前野蛮是否是往期页面，如果不是，显示往期列表布局，并将 currentPageIsPastList 置为true
+        //判断当前頁面是否是往期页面，如果不是，显示往期列表布局，并将 currentPageIsPastList 置为true
         if (!currentPageIsPastList) {
             //展示往期列表
             llPastListView.setVisibility(View.VISIBLE);
@@ -402,44 +412,49 @@ public class HomePageFragment extends Fragment {
      * @param url
      */
     private void getArticleList(final String url) {
+        //开始加载动画
+        startLoading();
+        //判断当前是不是往期列表，如果是往期列表页面，回到主页面
         if (currentPageIsPastList) {
             dismissPastListView();
             Log.d(TAG, "getArticleList: " + currentPageIsPastList);
         }
-        new Thread(new Runnable() {
+        Log.d(TAG, "getArticleList: URL = " + url);
+        HttpUtils.getAsync(url, new StringCallback() {
             @Override
-            public void run() {
-                Log.d(TAG, "getArticleList: URL = " + url);
-                try {
-                    Response response = HttpUtils.getSync(url);
-                    int responseCode = response.code();
-                    Log.d(TAG, "connectSuccess: responseCode = " + responseCode);
-                    String pageDataJsonString = response.body().string();
-                    final HomePageData homePageData = new Gson().fromJson(pageDataJsonString, HomePageData.class);
-                    Log.d(TAG, "connectSuccess: " + homePageData.getData().getWeather().getCityName() + "" + homePageData.getData().getWeather().getClimate());
+            public void onSuccess(com.lzy.okgo.model.Response<String> response) {
+                int responseCode = response.code();
+                Log.d(TAG, "onSuccess: responseCode = " + responseCode);
+                String pageDataJsonString = response.body();
+                HomePageData homePageData = new Gson().fromJson(pageDataJsonString, HomePageData.class);
+                Log.d(TAG, "onSuccess: " + homePageData.getData().getWeather().getCityName() + "" + homePageData.getData().getWeather().getClimate());
 
-                    String musicItemId = "";
-                    for (HomePageData.Data.ContentData contentData : homePageData.getData().getContentList()) {
-                        int category = Integer.parseInt(contentData.getCategory());
-                        if (category == 4) {
-                            musicItemId = contentData.getItemId();
-                        }
+                //获取当前显示页面的日期详情
+                String dateStr = homePageData.getData().getDate();
+                currentShowDate = TextFormatUtil.getFormatedDate(dateStr, TextFormatUtil.Y_M_D_H_M_S, TextFormatUtil.Y_M_D);
+                Log.d(TAG, "onSuccess:currentShowDate = " + currentShowDate);
+                Log.d(TAG, "onSuccess: todayDate = " + todayDate);
+                //添加menu数据
+                HomePageData.Data.ContentData menuContentData = homePageData.getData().new ContentData();
+                menuContentData.setCategory("-1");
+                homePageData.getData().getContentList().add(1, menuContentData);
+                //设置 menuData
+                contentMenuData = homePageData.getData().getMenu();
+                //根据 音乐Id 获取音乐数据
+                String musicItemId = "";
+                for (HomePageData.Data.ContentData contentData : homePageData.getData().getContentList()) {
+                    int category = Integer.parseInt(contentData.getCategory());
+                    if (category == 4) {
+                        musicItemId = contentData.getItemId();
                     }
-                    if (!"".equals(musicItemId)) {
-                        //开始获取音乐详情
-                        getMusicInfoFromInternet(musicItemId);
-                    }
-                    mHandler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            initData(homePageData);
-                        }
-                    });
-                } catch (IOException e) {
-                    e.printStackTrace();
                 }
+                if (!"".equals(musicItemId)) {
+                    //开始获取音乐详情
+                    getMusicInfoFromInternet(musicItemId);
+                }
+                initDataToUi(homePageData);
             }
-        }).start();
+        });
     }
 
     /**
@@ -449,49 +464,74 @@ public class HomePageFragment extends Fragment {
      */
     private void getMusicInfoFromInternet(String musicItemId) {
         String url = _URL.getMusicHtml(musicItemId);
-        try {
-            Response response = HttpUtils.getSync(url);
-            Log.d(TAG, "getMusicInfoFromInternet: response.code() = " + response.code());
-            if (response.code() == 200) {
-                String musicJson = response.body().string();
-                Log.d(TAG, "getMusicInfoFromInternet: musicJson = \n" + musicJson);
-                mMusicDetailData = new Gson().fromJson(musicJson, ContentHtmlData.class);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+        HttpUtils.getAsync(url, new StringCallback() {
+            @Override
+            public void onSuccess(com.lzy.okgo.model.Response<String> response) {
+                Log.d(TAG, "getMusicInfoFromInternet: response.code() = " + response.code());
+                if (response.code() == 200) {
+                    String musicJson = response.body();
+                    Log.d(TAG, "getMusicInfoFromInternet: musicJson = \n" + musicJson);
+                    mMusicDetailData = new Gson().fromJson(musicJson, ContentHtmlData.class);
 
-    public ContentHtmlData getMusicDetailData() {
-        if (mMusicDetailData != null) {
-            Document document = Jsoup.parse(mMusicDetailData.getData().getHtmlContent());
-            Element element = document.getElementsByClass("one-music-header-info").get(0);
-            final String musicTitle = element.text();
-            Log.d(TAG, "getMusicDetailData: musicTitle = " + musicTitle);
-            mHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    mMusicDetailData.getData().setMusicTitle(musicTitle);
+                    if (mMusicDetailData != null) {
+                        Document document = Jsoup.parse(mMusicDetailData.getData().getHtmlContent());
+                        Element element = document.getElementsByClass("one-music-header-info").get(0);
+                        String musicTitle = element.text();
+                        Log.d(TAG, "getMusicDetailData: musicTitle = " + musicTitle);
+                        mMusicDetailData.getData().setMusicTitle(musicTitle);
+                    }
                 }
-            });
-        }
-        return this.mMusicDetailData;
+            }
+        });
     }
 
     /**
-     * 开始加载
+     * 获取音乐背景下的标题
+     *
+     * @return
+     */
+    public ContentHtmlData getMusicDetailData() {
+        return mMusicDetailData;
+    }
+
+    /**
+     * 获取当前页面的菜单对象
+     *
+     * @return
+     */
+    public HomePageData.Data.ContentMenu getContentMenuData() {
+        return this.contentMenuData;
+    }
+
+    /**
+     * 开始加载 加载动画
      */
     private void startLoading() {
-
+        if (swipeRefreshLayout != null) {
+            if (!swipeRefreshLayout.isRefreshing()) {
+                swipeRefreshLayout.setRefreshing(true);
+            }
+        }
+        mActivity.startLoading();
     }
 
     /**
-     * 停止加载
+     * 停止加载 加载动画消失
      */
     private void stopLoading() {
-
+        if (swipeRefreshLayout != null) {
+            if (swipeRefreshLayout.isRefreshing()) {
+                swipeRefreshLayout.setRefreshing(false);
+            }
+        }
+        mActivity.stopLoading();
     }
 
+    /**
+     * 获取当前 activity 对象
+     *
+     * @return
+     */
     public MainActivity getmActivity() {
         return mActivity;
     }

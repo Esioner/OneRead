@@ -14,6 +14,15 @@ public interface ConstantValue {
      */
     String FILE_PATH = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "EasyRead";
 
+    /**
+     * 地址
+     */
     String WEATHER_LOCATION = "WEATHER_LOCATION";
+    /**
+     * 获取地址的时间
+     */
+    String GET_LOCATION_TIME = "GET_LOCATION_TIME";
+
+
 
 }

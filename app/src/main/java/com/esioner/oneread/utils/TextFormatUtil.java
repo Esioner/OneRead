@@ -18,6 +18,20 @@ public class TextFormatUtil {
 
     public static final String Y_M_D = "yyyy-MM-dd";
     public static final String Y_M = "yyyy-MM";
+    public static final String Y_M_D_H_M_S = "yyyy-MM-dd HH:mm:ss";
+
+
+    public static String getFormatedDate(String dateString, String fromFormat, String toFormat) {
+        SimpleDateFormat formatFrom = new SimpleDateFormat(fromFormat);
+        Date date = null;
+        try {
+            date = formatFrom.parse(dateString);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        SimpleDateFormat formatTo = new SimpleDateFormat(toFormat);
+        return formatTo.format(date);
+    }
 
     /**
      * 格式化时间 yyyy-MM-dd HH:mm:ss ==》 [2018,MAY,10]
@@ -77,7 +91,7 @@ public class TextFormatUtil {
             }
             dateArr[1] = formatMonth;
             dateArr[2] = day + "";
-//            Log.d(TAG, "initData: " + year + "-" + month + "-" + day);
+//            Log.d(TAG, "initDataToUi: " + year + "-" + month + "-" + day);
         } catch (ParseException e) {
             e.printStackTrace();
         }

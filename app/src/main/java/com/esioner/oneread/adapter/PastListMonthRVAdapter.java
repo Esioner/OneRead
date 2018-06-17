@@ -102,7 +102,7 @@ public class PastListMonthRVAdapter extends RecyclerView.Adapter<PastListMonthRV
         });
 
         holder.rvMonthDate.setLayoutManager(manager);
-        //设置item间距，30dp
+        //设置item间距，30PX
         holder.rvMonthDate.addItemDecoration(new SpaceItemDecoration(30));
         holder.rvMonthDate.setAdapter(dateRVAdapter);
 

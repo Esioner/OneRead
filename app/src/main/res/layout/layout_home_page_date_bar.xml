@@ -10,26 +10,27 @@
         android:id="@+id/ll_date"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:gravity="bottom"
-
-        >
+        android:layout_alignParentBottom="true"
+        android:layout_centerVertical="true"
+        android:layout_gravity="bottom"
+        android:gravity="bottom|center">
 
         <TextView
-            android:id="@+id/tv_day"
+            android:id="@+id/tv_date"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom"
-            android:text="26"
+            android:gravity="bottom"
+            android:text="17"
             android:textColor="#000"
-            android:textSize="26dp"
-            android:textStyle="bold" />
+            android:textSize="40dp"
+            android:textStyle="bold"
+            android:typeface="sans" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
             android:gravity="bottom"
             android:text="  " />
 
@@ -39,31 +40,33 @@
             android:layout_height="wrap_content"
             android:layout_gravity="bottom"
             android:gravity="bottom"
-            android:text="Jun"
+            android:text="JUNE"
             android:textColor="#000"
-            android:textSize="14dp"
-            android:textStyle="bold" />
+            android:textSize="12dp"
+            android:textStyle="bold"
+            android:typeface="sans" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
             android:gravity="bottom"
             android:text="."
             android:textColor="#000"
-            android:textSize="14dp"
+            android:textSize="20dp"
             android:textStyle="bold" />
 
         <TextView
             android:id="@+id/tv_year"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
             android:gravity="bottom"
             android:text="2018"
             android:textColor="#000"
-            android:textSize="14dp"
-            android:textStyle="bold" />
-
-
+            android:textSize="12dp"
+            android:textStyle="bold"
+            android:typeface="sans" />
     </LinearLayout>
 
     <LinearLayout
@@ -72,58 +75,71 @@
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_alignParentEnd="true"
-        android:layout_marginBottom="8dp"
-        android:layout_marginEnd="5dp"
-        android:gravity="bottom">
+        android:gravity="bottom"
+        android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/tv_datebar_city"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="end|bottom"
-            android:text="上海" />
+        <ImageView
+            android:id="@+id/iv_datebar_weather"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_gravity="center" />
 
-        <TextView
+        <LinearLayout
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text=" " />
+            android:layout_height="wrap_content">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="·" />
+            <TextView
+                android:id="@+id/tv_datebar_city"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end|bottom"
+                android:text="" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text=" " />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=" " />
 
-        <TextView
-            android:id="@+id/tv_datebar_climate"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="小雨" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="·" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="  " />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=" " />
 
-        <TextView
-            android:id="@+id/tv_datebar_temperature"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="26" />
+            <TextView
+                android:id="@+id/tv_datebar_climate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="℃" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="  " />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="  " />
+            <TextView
+                android:id="@+id/tv_datebar_temperature"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="℃" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="  " />
+
+        </LinearLayout>
+
+
     </LinearLayout>
 
     <Button
@@ -143,8 +159,8 @@
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
+        android:layout_alignParentBottom="true"
         android:background="#000"
-        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 </RelativeLayout>

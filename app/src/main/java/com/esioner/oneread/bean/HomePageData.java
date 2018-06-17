@@ -99,6 +99,7 @@ public class HomePageData {
             public class VolDetail {
                 @SerializedName("content_id")
                 private String contentId;
+                @SerializedName("content_type")
                 private String contentType;
                 private String title;
                 private ContentTag tag;

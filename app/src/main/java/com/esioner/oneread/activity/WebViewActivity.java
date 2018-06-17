@@ -1,26 +1,23 @@
 package com.esioner.oneread.activity;
 
-import android.app.Dialog;
 import android.content.Context;
 import android.graphics.drawable.AnimationDrawable;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.support.annotation.Nullable;
+import android.support.annotation.NonNull;
 import android.util.Log;
 import android.view.View;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.bumptech.glide.Glide;
 import com.esioner.oneread.R;
@@ -111,7 +108,7 @@ public class WebViewActivity extends BaseActivity implements View.OnClickListene
 
 
     @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         pageId = getIntent().getStringExtra("itemId");
 
@@ -125,7 +122,6 @@ public class WebViewActivity extends BaseActivity implements View.OnClickListene
         loadDetailContentById(pageCategory, pageId);
 
     }
-
 
     @Override
     protected void onResume() {
@@ -170,6 +166,33 @@ public class WebViewActivity extends BaseActivity implements View.OnClickListene
             }
         }
 
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (isPlayMedia) {
+            new MaterialDialog.Builder(mContext)
+                    .title("警告")
+                    .content("媒体正在播放，是否确定退出")
+                    .positiveText("确定")
+                    .onPositive(new MaterialDialog.SingleButtonCallback() {
+                        @Override
+                        public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                            dialog.dismiss();
+                            finish();
+                        }
+                    })
+                    .negativeText("取消")
+                    .onNegative(new MaterialDialog.SingleButtonCallback() {
+                        @Override
+                        public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                            dialog.dismiss();
+                        }
+                    })
+                    .show();
+        } else {
+            super.onBackPressed();
+        }
     }
 
     /**

@@ -4,10 +4,6 @@ import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.Color;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.RecyclerView;
@@ -15,18 +11,19 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
-import android.widget.Button;
+import android.view.animation.Animation;
+import android.view.animation.LinearInterpolator;
+import android.view.animation.RotateAnimation;
+import android.widget.AdapterView;
 import android.widget.ImageView;
-import android.widget.PopupWindow;
+import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
-import com.ashokvarma.bottomnavigation.utils.Utils;
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.request.target.Target;
 import com.esioner.oneread.R;
 import com.esioner.oneread.activity.WebViewActivity;
 import com.esioner.oneread.bean.HomePageData;
@@ -34,13 +31,12 @@ import com.esioner.oneread.bean.ContentHtmlData;
 import com.esioner.oneread.fragment.HomePageFragment;
 import com.esioner.oneread.listener.DownloadListener;
 import com.esioner.oneread.utils.ConstantValue;
-import com.esioner.oneread.utils.FileUtils;
 import com.esioner.oneread.utils.HttpUtils;
+import com.esioner.oneread.view.MyListView;
 
 import java.io.File;
-import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
@@ -50,6 +46,10 @@ import de.hdodenhof.circleimageview.CircleImageView;
 
 public class ContentRVAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private static final String TAG = ContentRVAdapter.class.getSimpleName();
+    /**
+     * 菜单
+     */
+    private static final int MENU = -1;
     /**
      * 图文
      */
@@ -129,23 +129,53 @@ public class ContentRVAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
         }
     }
 
+    public class MenuHolder extends RecyclerView.ViewHolder {
+
+        public View view;
+        public MyListView lvTagTitle;
+        public ImageView ivCheckStatus;
+        public TextView tvPageTitle;
+        public LinearLayout llTitleBar;
+
+        public MenuHolder(View itemView) {
+            super(itemView);
+            view = itemView;
+            lvTagTitle = itemView.findViewById(R.id.lv_home_page_menu);
+            ivCheckStatus = itemView.findViewById(R.id.iv_home_page_check_status);
+            tvPageTitle = itemView.findViewById(R.id.tv_home_page_title);
+            llTitleBar = itemView.findViewById(R.id.ll_home_page_title_bar);
+        }
+
+        //自动点击
+        public void autoClick() {
+            view.performClick();
+        }
+    }
 
     public class MusicHolder extends RecyclerView.ViewHolder {
 
         public TextView tvMusicArticleTitle;
-        public TextView tvMusicArticleaAuthorName;
+        public TextView tvMusicArticleAuthorName;
         public TextView tvMusicCategoryTitle;
         public TextView tvMusicArticleForward;
         public CircleImageView ivMusicCover;
+        public View view;
 
         public MusicHolder(View itemView) {
             super(itemView);
+            view = itemView;
             tvMusicArticleTitle = itemView.findViewById(R.id.tv_music_article_title);
-            tvMusicArticleaAuthorName = itemView.findViewById(R.id.tv_music_article_author_name);
+            tvMusicArticleAuthorName = itemView.findViewById(R.id.tv_music_article_author_name);
             tvMusicCategoryTitle = itemView.findViewById(R.id.tv_music_category_title);
             tvMusicArticleForward = itemView.findViewById(R.id.tv_music_article_forward);
             ivMusicCover = itemView.findViewById(R.id.iv_music_cover_image);
         }
+
+        //自动点击
+        public void autoClick() {
+            view.performClick();
+        }
+
     }
 
 
@@ -155,6 +185,10 @@ public class ContentRVAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
         View view;
         RecyclerView.ViewHolder holder = null;
         switch (viewType) {
+            case MENU:
+                view = LayoutInflater.from(parent.getContext()).inflate(R.layout.layout_recyclerview_item_one_menu, parent, false);
+                holder = new MenuHolder(view);
+                break;
             case IMAGE_TEXT:
                 view = LayoutInflater.from(parent.getContext()).inflate(R.layout.layout_recyclerview_item_text_image, parent, false);
                 holder = new ImageWithTextViewHolder(view);
@@ -177,7 +211,7 @@ public class ContentRVAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
     }
 
     @Override
-    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+    public void onBindViewHolder(final RecyclerView.ViewHolder holder, int position) {
 
         final HomePageData.Data.ContentData contentData = contentDataList.get(position);
         int category = Integer.parseInt(contentData.getCategory());
@@ -187,24 +221,57 @@ public class ContentRVAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
             ((ImageWithTextViewHolder) holder).tvTitle.setText(contentData.getTitle());
             ((ImageWithTextViewHolder) holder).tvPicInfo.setText(contentData.getPicInfo());
             ((ImageWithTextViewHolder) holder).tvWordInfo.setText(contentData.getWordsInfo());
-        } else if (holder instanceof ArticleCommonViewHolder) {
+        } else if (holder instanceof MenuHolder) {
+            HomePageData.Data.ContentMenu menuData = homePageFragment.getContentMenuData();
+            List<HomePageData.Data.ContentMenu.VolDetail> menuList = menuData.getList();
+            Log.d(TAG, "onBindViewHolder: " + Arrays.toString(menuList.toArray()));
+            ((MenuHolder) holder).tvPageTitle.setText("VOL." + menuData.getVol());
+            Log.d(TAG, "onBindViewHolder: menuList.size()= " + menuList.size());
+            Log.d(TAG, "onBindViewHolder: vol" + menuData.getVol());
+            ListViewAdapter adapter = new ListViewAdapter(menuList);
+            ((MenuHolder) holder).lvTagTitle.setAdapter(adapter);
+            ((MenuHolder) holder).llTitleBar.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (((MenuHolder) holder).lvTagTitle.getVisibility() == View.GONE) {
+                        startRotateAnim(((MenuHolder) holder).ivCheckStatus, 0, 180);
+                        ((MenuHolder) holder).lvTagTitle.setVisibility(View.VISIBLE);
+                    } else {
+                        startRotateAnim(((MenuHolder) holder).ivCheckStatus, 180, 0);
 
-            String categoryTitle = "";
-            switch (category) {
-                case ESSAY:
-                    categoryTitle = "- 阅读 -";
-                    break;
-                case SERIAL:
-                    categoryTitle = "- 连载 -";
-                    break;
-                case QUESTION:
-                    categoryTitle = "- 问答 -";
-                    break;
-                case MOVIE:
-                    categoryTitle = "- 影视 -";
-                    ((ArticleCommonViewHolder) holder).ivImage.setImageResource(R.drawable.movie_item_src);
-                    break;
-            }
+                        ((MenuHolder) holder).lvTagTitle.setVisibility(View.GONE);
+                    }
+                }
+            });
+            ((MenuHolder) holder).lvTagTitle.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                    int fatherPosition = position + 2;
+                    HomePageData.Data.ContentData clickedContentData = contentDataList.get(fatherPosition);
+                    Log.d(TAG, "onItemClick: clickedContentData = " + clickedContentData.getTitle());
+                    Intent intent = new Intent(mContext, WebViewActivity.class);
+                    intent.putExtra("itemId", clickedContentData.getItemId());
+                    intent.putExtra("category", clickedContentData.getCategory());
+                    mContext.startActivity(intent);
+                }
+            });
+        } else if (holder instanceof ArticleCommonViewHolder) {
+            String categoryTitle = getContentTagTitle(contentData);
+//            switch (category) {
+//                case ESSAY:
+//                    categoryTitle = "- 阅读 -";
+//                    break;
+//                case SERIAL:
+//                    categoryTitle = "- 连载 -";
+//                    break;
+//                case QUESTION:
+//                    categoryTitle = "- 问答 -";
+//                    break;
+//                case MOVIE:
+//                    categoryTitle = "- 影视 -";
+//                    ((ArticleCommonViewHolder) holder).ivImage.setImageResource(R.drawable.movie_item_src);
+//                    break;
+//            }
             ((ArticleCommonViewHolder) holder).tvCategoryTitle.setText(categoryTitle);
             Glide.with(mContext).load(contentData.getImgUrl()).into(((ArticleCommonViewHolder) holder).ivImage);
             ((ArticleCommonViewHolder) holder).tvAuthorName.setText("文 / " + contentData.getAuthor().getUserName());
@@ -213,7 +280,7 @@ public class ContentRVAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
         } else if (holder instanceof MusicHolder) {
             ContentHtmlData data = homePageFragment.getMusicDetailData();
             if (data != null) {
-                ((MusicHolder) holder).tvMusicArticleaAuthorName.setText("文 / " + data.getData().getAuthorInfoList().get(0).getUserName());
+                ((MusicHolder) holder).tvMusicArticleAuthorName.setText("文 / " + data.getData().getAuthorInfoList().get(0).getUserName());
                 ((MusicHolder) holder).tvMusicCategoryTitle.setText(data.getData().getMusicTitle());
             }
             ((MusicHolder) holder).tvMusicArticleTitle.setText(contentData.getTitle());
@@ -237,7 +304,6 @@ public class ContentRVAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
                 @Override
                 public void onClick(View v) {
                     final Dialog dialog = new Dialog(mContext, R.style.Dialog_Fullscreen);
-
                     final View view = LayoutInflater.from(mContext).inflate(R.layout.layout_image_text_detail, null, false);
                     TextView tvVOLId = view.findViewById(R.id.tv_vol_id);
                     TextView tvTittle = view.findViewById(R.id.tv_text_image_dialog_title);
@@ -335,5 +401,59 @@ public class ContentRVAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
         int contentType = Integer.parseInt(category.trim());
 //        Log.d(TAG, "getItemViewType: contentType = " + contentType);
         return contentType;
+    }
+
+    /**
+     * 开始旋转动画
+     *
+     * @param v
+     * @param fromAngle
+     * @param toAngle
+     */
+    public void startRotateAnim(View v, int fromAngle, int toAngle) {
+        Animation rotateAnimation = new RotateAnimation(fromAngle, toAngle, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
+        rotateAnimation.setFillAfter(true);
+        rotateAnimation.setDuration(250);
+        rotateAnimation.setRepeatCount(0);
+        rotateAnimation.setInterpolator(new LinearInterpolator());
+        v.startAnimation(rotateAnimation);
+    }
+
+    /**
+     * 获取标签名称
+     *
+     * @param contentData
+     * @return
+     */
+    public String getContentTagTitle(HomePageData.Data.ContentData contentData) {
+        int category = Integer.parseInt(contentData.getCategory());
+        String tag;
+        if (contentData.getTagList() != null && contentData.getTagList().size() > 0) {
+            tag = contentData.getTagList().get(0).getTitle();
+        } else {
+            switch (category) {
+                case 1:
+                    tag = "阅读";
+                    break;
+                case 2:
+                    tag = "连载";
+                    break;
+                case 3:
+                    tag = "问答";
+                    break;
+                case 4:
+                    tag = "音乐";
+                    break;
+                case 5:
+                    tag = "影视";
+                    break;
+                case 8:
+                    tag = "电台";
+                    break;
+                default:
+                    tag = "";
+            }
+        }
+        return "- " + tag + " -";
     }
 }

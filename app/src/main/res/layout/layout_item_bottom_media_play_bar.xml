@@ -45,7 +45,7 @@
                 android:layout_height="wrap_content"
                 android:text="有声阅读 | "
                 android:textColor="#000"
-                android:textSize="14dp" />
+                android:textSize="12dp" />
 
             <TextView
                 android:id="@+id/tv_bottom_bar_media_read_author_name"
@@ -53,7 +53,7 @@
                 android:layout_height="wrap_content"
                 android:text="马小成"
                 android:textColor="#000"
-                android:textSize="14dp" />
+                android:textSize="12dp" />
 
         </LinearLayout>
 
@@ -67,17 +67,15 @@
                 android:layout_height="wrap_content"
                 android:text="已播放时长："
                 android:textColor="#000"
-                android:textSize="14dp" />
+                android:textSize="12dp" />
 
             <TextView
                 android:id="@+id/tv_bottom_bar_media_time"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="15.66"
+                android:text="..."
                 android:textColor="#000"
-                android:textSize="14dp" />
+                android:textSize="12dp" />
         </LinearLayout>
-
     </LinearLayout>
-
 </LinearLayout>
