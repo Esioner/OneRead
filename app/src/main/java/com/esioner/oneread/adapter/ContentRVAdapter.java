@@ -15,6 +15,8 @@ import android.view.animation.Animation;
 import android.view.animation.LinearInterpolator;
 import android.view.animation.RotateAnimation;
 import android.widget.AdapterView;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
@@ -118,6 +120,7 @@ public class ContentRVAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
         public TextView tvTitle;
         public TextView tvAuthorName;
         public TextView tvCategoryTitle;
+        public TextView tvSubtitle;
 
         public ArticleCommonViewHolder(View itemView) {
             super(itemView);
@@ -126,6 +129,7 @@ public class ContentRVAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
             tvTitle = itemView.findViewById(R.id.tv_content_item_title);
             tvForward = itemView.findViewById(R.id.tv_content_item_forward);
             ivImage = itemView.findViewById(R.id.iv_content_item_image);
+            tvSubtitle = itemView.findViewById(R.id.tv_content_item_subtitle);
         }
     }
 
@@ -145,11 +149,6 @@ public class ContentRVAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
             tvPageTitle = itemView.findViewById(R.id.tv_home_page_title);
             llTitleBar = itemView.findViewById(R.id.ll_home_page_title_bar);
         }
-
-        //自动点击
-        public void autoClick() {
-            view.performClick();
-        }
     }
 
     public class MusicHolder extends RecyclerView.ViewHolder {
@@ -160,6 +159,7 @@ public class ContentRVAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
         public TextView tvMusicArticleForward;
         public CircleImageView ivMusicCover;
         public View view;
+        public CheckBox cbPlayButton;
 
         public MusicHolder(View itemView) {
             super(itemView);
@@ -169,11 +169,7 @@ public class ContentRVAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
             tvMusicCategoryTitle = itemView.findViewById(R.id.tv_music_category_title);
             tvMusicArticleForward = itemView.findViewById(R.id.tv_music_article_forward);
             ivMusicCover = itemView.findViewById(R.id.iv_music_cover_image);
-        }
-
-        //自动点击
-        public void autoClick() {
-            view.performClick();
+            cbPlayButton = itemView.findViewById(R.id.cb_music_play_button);
         }
 
     }
@@ -238,7 +234,6 @@ public class ContentRVAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
                         ((MenuHolder) holder).lvTagTitle.setVisibility(View.VISIBLE);
                     } else {
                         startRotateAnim(((MenuHolder) holder).ivCheckStatus, 180, 0);
-
                         ((MenuHolder) holder).lvTagTitle.setVisibility(View.GONE);
                     }
                 }
@@ -272,16 +267,50 @@ public class ContentRVAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
 //                    ((ArticleCommonViewHolder) holder).ivImage.setImageResource(R.drawable.movie_item_src);
 //                    break;
 //            }
+
+            //当item为电影的时，forward后面应该是有电影名称的
+            if (category == MOVIE) {
+                ((ArticleCommonViewHolder) holder).tvSubtitle.setVisibility(View.VISIBLE);
+                ((ArticleCommonViewHolder) holder).tvSubtitle.setText("--" + contentData.getSubtitle());
+            }
             ((ArticleCommonViewHolder) holder).tvCategoryTitle.setText(categoryTitle);
             Glide.with(mContext).load(contentData.getImgUrl()).into(((ArticleCommonViewHolder) holder).ivImage);
             ((ArticleCommonViewHolder) holder).tvAuthorName.setText("文 / " + contentData.getAuthor().getUserName());
             ((ArticleCommonViewHolder) holder).tvForward.setText(contentData.getForward());
             ((ArticleCommonViewHolder) holder).tvTitle.setText(contentData.getTitle());
         } else if (holder instanceof MusicHolder) {
-            ContentHtmlData data = homePageFragment.getMusicDetailData();
+            ((MusicHolder) holder).cbPlayButton.setChecked(false);
+            final ContentHtmlData data = homePageFragment.getMusicDetailData();
             if (data != null) {
                 ((MusicHolder) holder).tvMusicArticleAuthorName.setText("文 / " + data.getData().getAuthorInfoList().get(0).getUserName());
                 ((MusicHolder) holder).tvMusicCategoryTitle.setText(data.getData().getMusicTitle());
+
+                final RotateAnimation animation;
+                animation = new RotateAnimation(0f, 360f, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
+                animation.setInterpolator(new LinearInterpolator());
+                animation.setDuration(20000);
+
+                animation.setRepeatCount(Animation.INFINITE);
+                //音乐播放的按钮显示
+                ((MusicHolder) holder).cbPlayButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                    @Override
+                    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                        Log.d(TAG, "onCheckedChanged: isChecked = " + isChecked);
+                        if (isChecked) {
+                            //被选中状态是正在播放
+                            Toast.makeText(mContext, "开始播放或继续播放", Toast.LENGTH_SHORT).show();
+                            ((MusicHolder) holder).ivMusicCover.startAnimation(animation);
+                            homePageFragment.startPlayMedia(data.getData().getMusicId());
+                        } else if (!isChecked) {
+                            //未被选中是暂停或者还未播放状态
+                            Toast.makeText(mContext, "已暂停", Toast.LENGTH_SHORT).show();
+                            ((MusicHolder) holder).ivMusicCover.setAnimation(null);
+                            homePageFragment.pausePlayMedia();
+                        }
+                    }
+                });
+            } else {
+                ((MusicHolder) holder).cbPlayButton.setEnabled(false);
             }
             ((MusicHolder) holder).tvMusicArticleTitle.setText(contentData.getTitle());
             Glide.with(mContext).load(contentData.getImgUrl()).into(((MusicHolder) holder).ivMusicCover);

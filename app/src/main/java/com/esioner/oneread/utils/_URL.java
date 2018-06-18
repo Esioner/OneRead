@@ -44,13 +44,12 @@ public class _URL {
     }
 
     /**
-     * 获取详情
+     * 获取WebView頁面详情地址
      */
-    public static String getHtmlContent(int category, String itemId) throws Throwable {
-        String categoryName;
+    public static String getHtmlContent(int category, String itemId) {
+        String categoryName = "";
         switch (category) {
             case 1:
-
                 categoryName = "essay";
                 break;
             case 2:
@@ -63,12 +62,46 @@ public class _URL {
                 categoryName = "music";
                 break;
             case 5:
-                categoryName = "essay";
+                categoryName = "movie";
                 break;
             default:
-                throw new Throwable("category 格式错误");
+                break;
         }
         return BASE_URL + categoryName + "/htmlcontent/" + itemId;
+    }
+
+
+    /**
+     * http://v3.wufazhuce.com:8000/api/comment/praiseandtime/essay/3303/80096
+     * 加载更多评论
+     *
+     * @param category
+     * @param itemId
+     * @param lastCommentId 已加载的最后一项评论的 id 当id = 0时，表示第一次加载评论
+     * @return
+     */
+    public static String getCommentUrl(int category, String itemId, String lastCommentId) {
+        String categoryName = "";
+        switch (category) {
+            case 1:
+                categoryName = "essay";
+                break;
+            case 2:
+                categoryName = "serial";
+                break;
+            case 3:
+                categoryName = "question";
+                break;
+            case 4:
+                categoryName = "music";
+                break;
+            case 5:
+                categoryName = "movie";
+                break;
+            default:
+                break;
+        }
+        return BASE_URL + "comment/praiseandtime/" + categoryName + "/" + itemId + "/" + lastCommentId;
     }
 
     /**
@@ -78,6 +111,7 @@ public class _URL {
      * @param itemId
      * @return
      */
+
     public static String getMusicHtml(String itemId) {
         return BASE_URL + "music/htmlcontent/" + itemId;
     }
@@ -85,6 +119,7 @@ public class _URL {
     /**
      * http://v3.wufazhuce.com:8000/api/serial/list/
      * 获取连载列表
+     *
      * @param serialId
      * @return
      */

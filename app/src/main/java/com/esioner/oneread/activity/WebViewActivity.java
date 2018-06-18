@@ -1,17 +1,25 @@
 package com.esioner.oneread.activity;
 
+import android.app.Dialog;
 import android.content.Context;
+import android.graphics.Rect;
 import android.graphics.drawable.AnimationDrawable;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.CheckBox;
+import android.widget.CompoundButton;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -21,12 +29,16 @@ import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.bumptech.glide.Glide;
 import com.esioner.oneread.R;
+import com.esioner.oneread.adapter.CommentRVAdapter;
+import com.esioner.oneread.adapter.SpaceItemDecoration;
+import com.esioner.oneread.bean.CommentRootData;
 import com.esioner.oneread.bean.ContentHtmlData;
 import com.esioner.oneread.bean.SerialIdListData;
 import com.esioner.oneread.utils.HttpUtils;
 import com.esioner.oneread.utils._URL;
 import com.google.gson.Gson;
 import com.lzy.okgo.callback.StringCallback;
+import com.lzy.okgo.model.Response;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -48,9 +60,13 @@ public class WebViewActivity extends BaseActivity implements View.OnClickListene
      */
     public static final int TYPE_ARTICLE_WITH_SPEAKER = 1;
     /**
-     * 章节
+     * 连载
      */
     public static final int TYPE_SERIAL = 2;
+    /**
+     * 音乐
+     */
+    public static final int TYPE_MUSIC = 4;
 
     private WebView webView;
     private LinearLayout commentView;
@@ -105,6 +121,14 @@ public class WebViewActivity extends BaseActivity implements View.OnClickListene
     private boolean isLoading = false;
     private CheckBox cbCommentBarLike;
     private boolean isLikeed = false;
+    private LinearLayout llMusicBar;
+    private CheckBox cbMusicPlayButton;
+    /**
+     * 评论列表
+     */
+    private List<CommentRootData.CommentData.CommentDetailData> mCommentDataList;
+    private String mLastCommentId = "0";
+    private CommentRVAdapter commentRVAdapter;
 
 
     @Override
@@ -206,6 +230,34 @@ public class WebViewActivity extends BaseActivity implements View.OnClickListene
             //点击评论打开评论界面
             case R.id.ll_comment_bar_comment:
                 Toast.makeText(mContext, "打开评论页面", Toast.LENGTH_SHORT).show();
+                View view = LayoutInflater.from(mContext).inflate(R.layout.layout_comment_view, null, false);
+                RecyclerView rvComment = view.findViewById(R.id.rv_comment);
+                commentRVAdapter = new CommentRVAdapter(mCommentDataList, mContext);
+                final LinearLayoutManager manager = new LinearLayoutManager(mContext);
+                rvComment.setLayoutManager(manager);
+                rvComment.setAdapter(commentRVAdapter);
+                rvComment.addOnScrollListener(new RecyclerView.OnScrollListener() {
+                    @Override
+                    public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
+                        super.onScrollStateChanged(recyclerView, newState);
+                    }
+
+                    @Override
+                    public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+                        super.onScrolled(recyclerView, dx, dy);
+                        int firstVisibleItemPosition = manager.findFirstVisibleItemPosition();//可见范围内的第一项的位置
+                        int lastVisibleItemPosition = manager.findLastVisibleItemPosition();//可见范围内的最后一项的位置
+                        int itemCount = manager.getItemCount();//recyclerview中的item的所有的数目
+                        //当可见范围的最后一项在倒数第五个，开始加载更多
+                        if (lastVisibleItemPosition == (itemCount - 5)) {
+                            loadCommentData(pageCategory, pageId, mLastCommentId);
+                        }
+                    }
+                });
+                Dialog dialog = new Dialog(mContext, R.style.Dialog_Fullscreen);
+                dialog.getWindow().setWindowAnimations(R.style.DialogEnterAndExitAnimation);//设置Dialog动画
+                dialog.setContentView(view);
+                dialog.show();
                 break;
             //点击喜欢按钮
             case R.id.ll_comment_bar_like:
@@ -250,6 +302,21 @@ public class WebViewActivity extends BaseActivity implements View.OnClickListene
 
         //根据 category 来选择需要加载的组件
         switch (category) {
+            case TYPE_MUSIC:
+                llMusicBar = findViewById(R.id.ll_bottom_bar_music_play);
+                cbMusicPlayButton = findViewById(R.id.cb_bottom_bar_music_play_button);
+                cbMusicPlayButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                    @Override
+                    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                        if (isChecked) {
+                            //开始播放
+                            startPlayMedia(contentHtmlData.getData().getMusicId());
+                        } else if (!isChecked) {
+                            pausePlayMedia();
+                        }
+                    }
+                });
+                break;
             case TYPE_ARTICLE_WITH_SPEAKER:
                 //媒体播放页面内容
                 llMediaDetail = findViewById(R.id.rl_bottom_bar_media_detail);
@@ -263,7 +330,7 @@ public class WebViewActivity extends BaseActivity implements View.OnClickListene
                     @Override
                     public void onClick(View v) {
                         if (!isPlayMedia) {
-                            startPlayMedia(contentHtmlData.getData());
+                            startPlayMedia(contentHtmlData.getData().getAudio());
                         } else if (isPlayMedia) {
                             pausePlayMedia();
                         }
@@ -368,8 +435,9 @@ public class WebViewActivity extends BaseActivity implements View.OnClickListene
         //其他细节操作
         webSettings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK); //关闭webview中缓存
         webSettings.setLoadsImagesAutomatically(true); //支持自动加载图片
-        webSettings.setDefaultTextEncodingName("utf-8");//设置编码格式
+//        webSettings.setDefaultTextEncodingName("utf-8");//设置编码格式
     }
+
 
     /**
      * 根据 itemId 加载数据
@@ -385,34 +453,74 @@ public class WebViewActivity extends BaseActivity implements View.OnClickListene
         webViewDataIsFinish = false;
 
         //加载数据
-        try {
-            String url = _URL.getHtmlContent(category, itemId);
-            StringCallback callback = new StringCallback() {
-                @Override
-                public void onSuccess(com.lzy.okgo.model.Response<String> response) {
-                    if (response.code() == 200) {
-                        String jsonString = response.body();
-                        contentHtmlData = new Gson().fromJson(jsonString, ContentHtmlData.class);
-                        pageCategory = contentHtmlData.getData().getCategory();
-                        //如果是连载，加载连载id列表
-                        if (category == TYPE_SERIAL) {
-                            //获取连载 id
-                            String id = contentHtmlData.getData().getSerialId();
-                            mSerialCurrPageId = contentHtmlData.getData().getId();
-                            loadSerialArrById(id);
-                        }
-                        pageId = contentHtmlData.getData().getId();
-                        webViewDataIsFinish = true;
-                        //数据展示并处理
-                        showData(contentHtmlData);
+        String url = _URL.getHtmlContent(category, itemId);
+        Log.d(TAG, "loadDetailContentById: URL = " + url);
+        StringCallback callback = new StringCallback() {
+            @Override
+            public void onSuccess(com.lzy.okgo.model.Response<String> response) {
+                if (response.code() == 200) {
+                    String jsonString = response.body();
+                    contentHtmlData = new Gson().fromJson(jsonString, ContentHtmlData.class);
+                    pageCategory = contentHtmlData.getData().getCategory();
+                    //如果是连载，加载连载id列表
+                    if (category == TYPE_SERIAL) {
+                        //获取连载 id
+                        String id = contentHtmlData.getData().getSerialId();
+                        mSerialCurrPageId = contentHtmlData.getData().getId();
+                        loadSerialArrById(id);
+                    }
+                    pageId = contentHtmlData.getData().getId();
+                    webViewDataIsFinish = true;
+                    //数据展示并处理
+                    showData(contentHtmlData);
+                }
+            }
+        };
+        HttpUtils.getAsync(url, callback);
+        //加载评论
+        loadCommentData(category, itemId, null);
+
+
+    }
+
+    /**
+     * 加载评论
+     *
+     * @param category
+     * @param itemId
+     */
+    private void loadCommentData(int category, String itemId, @Nullable String lastCommentId) {
+        if (lastCommentId == null) {
+            lastCommentId = mLastCommentId;
+        }
+        String commentUrl = _URL.getCommentUrl(category, itemId, lastCommentId);
+        Log.d(TAG, "loadCommentData: commentUrl = " + commentUrl);
+        HttpUtils.getAsync(commentUrl, new StringCallback() {
+            @Override
+            public void onSuccess(Response<String> response) {
+                Log.d(TAG, "onSuccess: code = " + response.code());
+                String responseBody = response.body();
+                Log.d(TAG, "loadCommentData onSuccess: responseBody = " + responseBody);
+                if (response.code() == 200) {
+                    CommentRootData commentRootData = new Gson().fromJson(response.body(), CommentRootData.class);
+                    double commentCount = commentRootData.getData().getCount();
+                    Log.d(TAG, "loadCommentData : onSuccess: commentCount = " + commentCount);
+                    //获取评论列表
+                    if (mCommentDataList == null) {
+                        mCommentDataList = new ArrayList<>();
+                    }
+                    //添加数据前，list的长度
+                    int prevSize = mCommentDataList.size();
+                    Log.d(TAG, "loadCommentData onSuccess: 加载之前的评论列表长度 = " + prevSize);
+                    mCommentDataList.addAll(commentRootData.getData().getData());
+                    Log.d(TAG, "loadCommentData onSuccess: 加载之后的评论列表长度 = " + mCommentDataList.size());
+                    mLastCommentId = mCommentDataList.get(mCommentDataList.size() - 1).getId();
+                    if (commentRVAdapter != null) {
+                        commentRVAdapter.notifyItemChanged(prevSize);
                     }
                 }
-            };
-            HttpUtils.getAsync(url, callback);
-        } catch (Throwable throwable) {
-            throwable.printStackTrace();
-        }
-
+            }
+        });
     }
 
     /**
@@ -468,19 +576,23 @@ public class WebViewActivity extends BaseActivity implements View.OnClickListene
         if (category == 1 && !"".equals(htmlData.getData().getAudio().trim())) {
             llMediaDetail.setVisibility(View.VISIBLE);
             tvMediaSpeaker.setText(htmlData.getData().getAnchor());
-            Glide.with(mContext).load(htmlData.getData().getAuthorInfoList().get(0).getWebUrl());
+            Glide.with(mContext).load(htmlData.getData().getAuthorInfoList().get(0).getWebUrl()).into(ivMediaCover);
             htmlType = 1;
         } else if (category == 2) {
             htmlType = TYPE_SERIAL;
             llSerialBottomBar.setVisibility(View.VISIBLE);
+//            Glide.with(mContext).load(htmlData.getData().getAuthorInfoList().get(0).getWebUrl()).into(ivMediaCover);
+        } else if (category == 4) {
+            htmlType = TYPE_MUSIC;
+            llMusicBar.setVisibility(View.VISIBLE);
         }
         tvCommentNum.setText(htmlData.getData().getCommentNum() + "");
         tvLikeNum.setText(htmlData.getData().getPraiseNum() + "");
-        Log.d(TAG, "showData: getAudio = " + htmlData.getData().getAudio().trim());
         //加载html
         final int finalHtmlType = htmlType;
         String htmlDetail = parseHtmlByJsoup(htmlData.getData().getHtmlContent(), finalHtmlType);
-        webView.loadData(htmlDetail, "text/html", "UTF-8");
+//        webView.loadData(htmlDetail, "text/html", "UTF-8");
+        webView.loadData(htmlDetail, "text/html; charset=UTF-8", null);
         //停止刷新
         stopLoading();
     }
@@ -499,11 +611,13 @@ public class WebViewActivity extends BaseActivity implements View.OnClickListene
             if (htmlType == TYPE_ARTICLE_WITH_SPEAKER) {
                 //移出语音阅读标签
                 document.getElementsByClass("onevue-readingaudio-box").get(0).remove();
-            }
-            if (htmlType == TYPE_SERIAL) {
+            } else if (htmlType == TYPE_SERIAL) {
                 //移除章节和上一章和下一章按钮
                 (document.getElementsByClass("one-icon one-icon-chapter one-serial-nav-ids-btn").first()).remove();
                 (document.getElementsByClass("one-serial-nav-box").first()).remove();
+            } else if (htmlType == TYPE_MUSIC) {
+                //移出网页的音乐播放头部
+                (document.getElementsByClass("one-music-header-box one-page-header-image").first()).remove();
             }
             //移出评论标签
             Element element = document.getElementsByClass("one-comments-box").get(0);
@@ -530,17 +644,19 @@ public class WebViewActivity extends BaseActivity implements View.OnClickListene
     /**
      * 开始||继续播放
      *
-     * @param data
+     * @param mediaUrl 音频地址
      */
-    private void startPlayMedia(ContentHtmlData.HtmlData data) {
+    private void startPlayMedia(String mediaUrl) {
         try {
             if (!isPlayMedia) {
                 if (!isMediaPause) {
                     player = new MediaPlayer();
-                    player.setDataSource(data.getAudio());
+                    player.setDataSource(mediaUrl);
                     player.prepareAsync();
                     int duration = player.getDuration();
-                    tvMediaDuration.setText(duration + "");
+                    if (tvMediaDuration != null) {
+                        tvMediaDuration.setText(duration + "");
+                    }
 //                    pbPlayProgress.setMax(duration);
                     Log.d(TAG, "startPlayMedia:duration = " + duration);
                     Toast.makeText(mContext, "开始播放", Toast.LENGTH_SHORT).show();
@@ -558,31 +674,33 @@ public class WebViewActivity extends BaseActivity implements View.OnClickListene
             }
             isPlayMedia = true;
 
-            if (mediaPlayTimeThread == null) {
-                mediaPlayTimeThread = new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        while (isPlayMedia) {
-                            final int dur = player.getCurrentPosition() / 1000;
-                            Log.d(TAG, "startPlayMedia run: " + dur);
-                            mHandler.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    String time = (int) (dur / 60) + " : " + (int) (dur % 60);
-                                    Log.d(TAG, "startPlayMedia:time=  " + time);
+            if (pageCategory == TYPE_ARTICLE_WITH_SPEAKER) {
+                if (mediaPlayTimeThread == null) {
+                    mediaPlayTimeThread = new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            while (isPlayMedia) {
+                                final int dur = player.getCurrentPosition() / 1000;
+                                Log.d(TAG, "startPlayMedia run: " + dur);
+                                mHandler.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        String time = (int) (dur / 60) + " : " + (int) (dur % 60);
+                                        Log.d(TAG, "startPlayMedia:time=  " + time);
 //                                                pbPlayProgress.setProgress(dur);
-                                    tvMediaDuration.setText(time);
+                                        tvMediaDuration.setText(time);
+                                    }
+                                });
+                                try {
+                                    Thread.sleep(1000);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
                                 }
-                            });
-                            try {
-                                Thread.sleep(1000);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
                             }
                         }
-                    }
-                });
-                mediaPlayTimeThread.start();
+                    });
+                    mediaPlayTimeThread.start();
+                }
             }
 
         } catch (IOException e) {
@@ -622,13 +740,15 @@ public class WebViewActivity extends BaseActivity implements View.OnClickListene
      * 开始音频播放动画
      */
     private void startPlayMediaAnim() {
-        ivMediaPlayingBG.setImageResource(R.drawable.anim_media_playing);
-        if (!isPlayMedia) {
-            if (mediaPlayAnimationDrawable == null) {
-                mediaPlayAnimationDrawable = (AnimationDrawable) ivMediaPlayingBG.getDrawable();
+        if (ivMediaPlayingBG != null) {
+            ivMediaPlayingBG.setImageResource(R.drawable.anim_media_playing);
+            if (!isPlayMedia) {
+                if (mediaPlayAnimationDrawable == null) {
+                    mediaPlayAnimationDrawable = (AnimationDrawable) ivMediaPlayingBG.getDrawable();
+                }
+                mediaPlayAnimationDrawable.start();
+                Log.d(TAG, "startPlayMediaAnim: 正在播放");
             }
-            mediaPlayAnimationDrawable.start();
-            Log.d(TAG, "startPlayMediaAnim: 正在播放");
         }
     }
 
@@ -636,11 +756,13 @@ public class WebViewActivity extends BaseActivity implements View.OnClickListene
      * 停止音频播放动画
      */
     private void stopPlayMediaAnim() {
-        if (isPlayMedia) {
-            if (mediaPlayAnimationDrawable != null) {
-                mediaPlayAnimationDrawable.stop();
-                ivMediaPlayingBG.setImageResource(R.drawable.anim_media_play_03);
-                Log.d(TAG, "stopPlayMediaAnim: 已停止");
+        if (ivMediaPlayingBG != null) {
+            if (isPlayMedia) {
+                if (mediaPlayAnimationDrawable != null) {
+                    mediaPlayAnimationDrawable.stop();
+                    ivMediaPlayingBG.setImageResource(R.drawable.anim_media_play_03);
+                    Log.d(TAG, "stopPlayMediaAnim: 已停止");
+                }
             }
         }
     }

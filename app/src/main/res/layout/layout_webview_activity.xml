@@ -27,6 +27,11 @@
                 android:visibility="gone" />
 
             <include
+                layout="@layout/layout_item_bottom_music_play_bar"
+                android:visibility="gone" />
+
+
+            <include
                 layout="@layout/layout_bottom_tool_bar_serial_page"
                 android:visibility="gone" />
         </RelativeLayout>

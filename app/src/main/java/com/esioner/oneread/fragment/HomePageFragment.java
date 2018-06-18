@@ -1,6 +1,7 @@
 package com.esioner.oneread.fragment;
 
 import android.content.Context;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -183,12 +184,14 @@ public class HomePageFragment extends Fragment {
     @Override
     public void onPause() {
         Log.d(TAG, "onPause: ");
+
         super.onPause();
     }
 
     @Override
     public void onStop() {
         Log.d(TAG, "onStop: ");
+        releasePlayer();
         super.onStop();
     }
 
@@ -218,7 +221,7 @@ public class HomePageFragment extends Fragment {
         Log.d(TAG, "onDetach: ");
         super.onDetach();
     }
-    
+
     /**
      * 初始化控件
      */
@@ -261,7 +264,7 @@ public class HomePageFragment extends Fragment {
         mPastListMonthRVAdapter = new PastListMonthRVAdapter(mContext, pastDateList);
         LinearLayoutManager pastListManager = new LinearLayoutManager(mContext, LinearLayoutManager.VERTICAL, false);
         rvPastList.setLayoutManager(pastListManager);
-
+        
         rvPastList.setAdapter(mPastListMonthRVAdapter);
         PastListMonthRVAdapter.MonthViewOnClickListener listener = new PastListMonthRVAdapter.MonthViewOnClickListener() {
             @Override
@@ -414,6 +417,8 @@ public class HomePageFragment extends Fragment {
     private void getArticleList(final String url) {
         //开始加载动画
         startLoading();
+        //点击往期列表会先执行这个方法获取数据，先进行销毁资源
+        releasePlayer();
         //判断当前是不是往期列表，如果是往期列表页面，回到主页面
         if (currentPageIsPastList) {
             dismissPastListView();
@@ -525,6 +530,67 @@ public class HomePageFragment extends Fragment {
             }
         }
         mActivity.stopLoading();
+    }
+
+    /**
+     * 释放播放资源
+     */
+    public void releasePlayer() {
+        if (player != null) {
+            player.stop();
+            player.release();
+            isPlayMedia = false;
+            isMediaPause = false;
+            player = null;
+        }
+    }
+
+    /**
+     * 暂停播放
+     */
+    public void pausePlayMedia() {
+        if (player != null && player.isPlaying()) {
+            player.pause();
+            isPlayMedia = false;
+            isMediaPause = true;
+            Toast.makeText(mContext, "已暂停", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private MediaPlayer player;
+    private boolean isPlayMedia = false;
+    private boolean isMediaPause = false;
+
+    /**
+     * 开始||继续播放
+     *
+     * @param musicUrl
+     */
+    public void startPlayMedia(String musicUrl) {
+        try {
+            if (!isPlayMedia) {
+                if (!isMediaPause) {
+                    player = new MediaPlayer();
+                    player.setDataSource(musicUrl);
+                    player.prepareAsync();
+                    int duration = player.getDuration();
+                    Log.d(TAG, "startPlayMedia:duration = " + duration);
+                    Toast.makeText(mContext, "开始播放", Toast.LENGTH_SHORT).show();
+                    player.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+                        @Override
+                        public void onPrepared(MediaPlayer mp) {
+                            player.start();
+                        }
+                    });
+                } else if (isMediaPause) {
+                    player.start();
+                    Toast.makeText(mContext, "继续播放", Toast.LENGTH_SHORT).show();
+                }
+            }
+            isPlayMedia = true;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**

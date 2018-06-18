@@ -56,11 +56,13 @@
                     android:layout_centerInParent="true"
                     android:src="@drawable/date_list_cover" />
 
-                <ImageView
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
+                <CheckBox
+                    android:id="@+id/cb_music_play_button"
+                    android:layout_width="64dp"
+                    android:layout_height="64dp"
                     android:layout_centerInParent="true"
-                    android:background="@drawable/music_play" />
+                    android:background="@drawable/selector_media_player_bg"
+                    android:button="@null" />
 
             </RelativeLayout>
 
