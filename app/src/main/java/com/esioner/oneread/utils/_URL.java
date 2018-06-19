@@ -126,4 +126,10 @@ public class _URL {
     public static String getSerialIdList(String serialId) {
         return BASE_URL + "serial/list/" + serialId;
     }
+
+
+    /**
+     * 轮播图数据地址
+     */
+    public static String BANNER_DATA = "http://v3.wufazhuce.com:8000/api/banner/list/3?channel=cool";
 }

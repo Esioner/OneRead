@@ -77,6 +77,10 @@ public class ContentRVAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
      */
     private static final int MOVIE = 5;
     /**
+     * 广告
+     */
+    private static final int AD = 6;
+    /**
      * 电台
      */
     private static final int RADIO = 8;
@@ -200,7 +204,10 @@ public class ContentRVAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
                 view = LayoutInflater.from(parent.getContext()).inflate(R.layout.layout_recyclerview_item_music, parent, false);
                 holder = new MusicHolder(view);
                 break;
+//            case AD:
+//                break;
             default:
+
                 break;
         }
         return holder;
@@ -426,6 +433,7 @@ public class ContentRVAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
 
     @Override
     public int getItemViewType(int position) {
+        Log.d(TAG, "getItemViewType: position = " + position);
         String category = contentDataList.get(position).getCategory();
         int contentType = Integer.parseInt(category.trim());
 //        Log.d(TAG, "getItemViewType: contentType = " + contentType);

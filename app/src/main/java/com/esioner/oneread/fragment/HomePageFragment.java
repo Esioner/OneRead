@@ -49,6 +49,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 
 import okhttp3.Response;
@@ -264,7 +265,7 @@ public class HomePageFragment extends Fragment {
         mPastListMonthRVAdapter = new PastListMonthRVAdapter(mContext, pastDateList);
         LinearLayoutManager pastListManager = new LinearLayoutManager(mContext, LinearLayoutManager.VERTICAL, false);
         rvPastList.setLayoutManager(pastListManager);
-        
+
         rvPastList.setAdapter(mPastListMonthRVAdapter);
         PastListMonthRVAdapter.MonthViewOnClickListener listener = new PastListMonthRVAdapter.MonthViewOnClickListener() {
             @Override
@@ -434,11 +435,21 @@ public class HomePageFragment extends Fragment {
                 HomePageData homePageData = new Gson().fromJson(pageDataJsonString, HomePageData.class);
                 Log.d(TAG, "onSuccess: " + homePageData.getData().getWeather().getCityName() + "" + homePageData.getData().getWeather().getClimate());
 
+                //对广告进行剔除
+                Iterator iterator = homePageData.getData().getContentList().iterator();
+                while (iterator.hasNext()) {
+                    HomePageData.Data.ContentData data = (HomePageData.Data.ContentData) iterator.next();
+                    if (Integer.parseInt(data.getCategory()) == 6) {
+                        iterator.remove();
+                    }
+                }
+
                 //获取当前显示页面的日期详情
                 String dateStr = homePageData.getData().getDate();
                 currentShowDate = TextFormatUtil.getFormatedDate(dateStr, TextFormatUtil.Y_M_D_H_M_S, TextFormatUtil.Y_M_D);
                 Log.d(TAG, "onSuccess:currentShowDate = " + currentShowDate);
                 Log.d(TAG, "onSuccess: todayDate = " + todayDate);
+
                 //添加menu数据
                 HomePageData.Data.ContentData menuContentData = homePageData.getData().new ContentData();
                 menuContentData.setCategory("-1");

@@ -10,6 +10,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.design.widget.BottomSheetDialog;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -254,8 +255,9 @@ public class WebViewActivity extends BaseActivity implements View.OnClickListene
                         }
                     }
                 });
-                Dialog dialog = new Dialog(mContext, R.style.Dialog_Fullscreen);
-                dialog.getWindow().setWindowAnimations(R.style.DialogEnterAndExitAnimation);//设置Dialog动画
+//                Dialog dialog = new Dialog(mContext, R.style.Dialog_Fullscreen);
+                BottomSheetDialog dialog = new BottomSheetDialog(mContext);
+//                dialog.getWindow().setWindowAnimations(R.style.DialogEnterAndExitAnimation);//设置Dialog动画
                 dialog.setContentView(view);
                 dialog.show();
                 break;
@@ -512,7 +514,12 @@ public class WebViewActivity extends BaseActivity implements View.OnClickListene
                     //添加数据前，list的长度
                     int prevSize = mCommentDataList.size();
                     Log.d(TAG, "loadCommentData onSuccess: 加载之前的评论列表长度 = " + prevSize);
-                    mCommentDataList.addAll(commentRootData.getData().getData());
+                    if (commentRootData.getData() != null) {
+                        mCommentDataList.addAll(commentRootData.getData().getData());
+                    } else {
+                        Toast.makeText(mContext, "已加载全部", Toast.LENGTH_SHORT).show();
+                    }
+
                     Log.d(TAG, "loadCommentData onSuccess: 加载之后的评论列表长度 = " + mCommentDataList.size());
                     mLastCommentId = mCommentDataList.get(mCommentDataList.size() - 1).getId();
                     if (commentRVAdapter != null) {
