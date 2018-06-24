@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="5dp"
+
+    android:background="#FFF"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="10dp"
+        android:layout_marginStart="10dp"
+        android:layout_marginTop="5dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingBottom="1dp"
+        android:paddingTop="1dp"
+        android:visibility="visible">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1">
+
+            <de.hdodenhof.circleimageview.CircleImageView
+                android:id="@+id/iv_tab_rv_item_author_image"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_gravity="center"
+                android:layout_marginEnd="10dp"
+                android:src="@drawable/date_list_cover" />
+
+            <TextView
+                android:id="@+id/tv_tab_rv_item_author_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="王嫣芸"
+                android:textSize="12dp" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:gravity="center_vertical"
+                android:text="发表日期："
+                android:textSize="12dp" />
+
+            <TextView
+                android:id="@+id/tv_tab_rv_last_post_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:gravity="center_vertical"
+                android:text="2017-07-29 01:06:19"
+                android:textSize="12dp" />
+
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginEnd="10dp"
+        android:layout_marginStart="10dp"
+        android:gravity="center_vertical">
+
+        <FrameLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+            <!--670 : 400-->
+            <ImageView
+                android:id="@+id/iv_tab_rv_item_article_image"
+                android:layout_width="134dp"
+                android:layout_height="80dp"
+                android:layout_marginBottom="5dp"
+                android:layout_marginEnd="10dp"
+                android:background="@drawable/tab_article_image"
+                android:visibility="gone" />
+            <!--1804:1804-->
+            <ImageView
+                android:id="@+id/iv_tab_rv_item_music_image"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:layout_marginBottom="5dp"
+                android:layout_marginEnd="10dp"
+                android:layout_marginTop="5dp"
+                android:background="@drawable/tab_music_image"
+                android:visibility="gone" />
+            <!--710:399-->
+            <ImageView
+                android:id="@+id/iv_tab_rv_item_movie_image"
+                android:layout_width="140dp"
+                android:layout_height="80dp"
+                android:layout_marginBottom="5dp"
+                android:layout_marginEnd="10dp"
+                android:layout_marginTop="5dp"
+                android:background="@drawable/tab_movie"
+                android:visibility="gone" />
+
+        </FrameLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginEnd="5dp"
+            android:orientation="vertical"
+            android:paddingBottom="5dp">
+
+            <TextView
+                android:id="@+id/tv_tab_rv_item_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="start|center_vertical"
+                android:lines="2"
+                android:text="如何避免被薛甄珠式的亲妈带进沟里？"
+                android:textColor="@android:color/black"
+                android:textSize="16dp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_tab_rv_item_forward"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:ellipsize="end"
+                android:gravity="start|center_vertical"
+                android:lines="2"
+                android:text="我们不太习惯残忍，所以更多时候选择躲在低质量的亲密关系里用“爱没有对错”这句话麻痹自己。我们不太习惯残忍，所以更多时候选择躲在低质量的亲密关系里用“爱没有对错”这句话麻痹自己。 "
+                android:textSize="14dp" />
+
+        </LinearLayout>
+    </LinearLayout>
+
+
+</LinearLayout>

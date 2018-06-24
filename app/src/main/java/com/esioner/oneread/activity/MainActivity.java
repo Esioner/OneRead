@@ -16,6 +16,7 @@ import com.ashokvarma.bottomnavigation.BottomNavigationItem;
 import com.esioner.oneread.R;
 import com.esioner.oneread.fragment.AllPageFragment;
 import com.esioner.oneread.fragment.HomePageFragment;
+import com.esioner.oneread.fragment.MePagerFragment;
 import com.esioner.oneread.utils.ConstantValue;
 
 import java.lang.ref.WeakReference;
@@ -39,6 +40,7 @@ public class MainActivity extends BaseActivity {
      */
     private long firstClickKeyBackTime = 0;
     private MaterialDialog progressDialog;
+    private MePagerFragment meFragment;
 
 
     @Override
@@ -55,6 +57,7 @@ public class MainActivity extends BaseActivity {
     private void initUi() {
         homePageFragment = new HomePageFragment();
         allPageFragment = new AllPageFragment();
+        meFragment = new MePagerFragment();
 
         BottomNavigationBar navigationBar = findViewById(R.id.navigation_bar);
         navigationBar.setMode(BottomNavigationBar.MODE_FIXED);
@@ -73,7 +76,7 @@ public class MainActivity extends BaseActivity {
                         switchFragment(allPageFragment);
                         break;
                     case 2:
-
+                        switchFragment(meFragment);
                         break;
                 }
             }

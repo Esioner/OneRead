@@ -2,33 +2,7 @@ package com.esioner.oneread.bean;
 
 import com.google.gson.annotations.SerializedName;
 
-import java.util.List;
-
-/**
- * Created by Esioner on 2018/6/19.
- */
-
-public class HomePageVPRootData {
-    private List<VPDetailData> data;
-    private int res;
-
-    public List<VPDetailData> getData() {
-        return data;
-    }
-
-    public void setData(List<VPDetailData> data) {
-        this.data = data;
-    }
-
-    public int getRes() {
-        return res;
-    }
-
-    public void setRes(int res) {
-        this.res = res;
-    }
-
-    public class VPDetailData {
+public class TopicDetailData {
 
         private int category;
         @SerializedName("content_id")
@@ -97,4 +71,3 @@ public class HomePageVPRootData {
             this.title = title;
         }
     }
-}

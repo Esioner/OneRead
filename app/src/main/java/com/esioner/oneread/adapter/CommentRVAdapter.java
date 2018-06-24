@@ -90,6 +90,9 @@ public class CommentRVAdapter extends RecyclerView.Adapter<CommentRVAdapter.View
                 String getQuote = data.getQuote();
                 holder.tvToUserAndContent.setText(toUserName + ":" + getQuote);
             }
+            if (data.getQuote().equals("")) {
+                holder.rlCommentToUser.setVisibility(View.GONE);
+            }
         }
         String userName = data.getUser().getUserName() == null ? "" : data.getUser().getUserName();
         holder.tvUserName.setText(userName);
@@ -100,7 +103,7 @@ public class CommentRVAdapter extends RecyclerView.Adapter<CommentRVAdapter.View
         holder.tvUserContent.setText(data.getContent());
         Glide.with(mContext).load(data.getUser().getWebUrl()).into(holder.ivUserHeaderImage);
     }
-    
+
     @Override
     public int getItemCount() {
         return commentList.size();

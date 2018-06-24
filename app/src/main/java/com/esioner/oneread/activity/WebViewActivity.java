@@ -16,8 +16,7 @@ import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.webkit.WebSettings;
-import android.webkit.WebView;
+import com.tencent.smtt.sdk.WebSettings ;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
@@ -40,6 +39,7 @@ import com.esioner.oneread.utils._URL;
 import com.google.gson.Gson;
 import com.lzy.okgo.callback.StringCallback;
 import com.lzy.okgo.model.Response;
+import com.tencent.smtt.sdk.WebView;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -69,11 +69,11 @@ public class WebViewActivity extends BaseActivity implements View.OnClickListene
      */
     public static final int TYPE_MUSIC = 4;
 
-    private WebView webView;
+    private com.tencent.smtt.sdk.WebView webView;
     private LinearLayout commentView;
     private LinearLayout likeView;
     private ImageView ivShareView;
-    private WebSettings webSettings;
+    private com.tencent.smtt.sdk.WebSettings webSettings;
     private TextView tvCommentNum;
     private TextView tvLikeNum;
     private WebViewActivityHandler mHandler = new WebViewActivityHandler(this);
@@ -428,7 +428,6 @@ public class WebViewActivity extends BaseActivity implements View.OnClickListene
         //如果访问的页面中要与Javascript交互，则webview必须设置支持Javascript
         // 若加载的 html 里有JS 在执行动画等操作，会造成资源浪费（CPU、电量）
         // 在 onStop 和 onResume 里分别把 setJavaScriptEnabled() 给设置成 false 和 true 即可
-        webSettings.setJavaScriptEnabled(true);
         //设置自适应屏幕，两者合用
         webSettings.setUseWideViewPort(true); //将图片调整到适合webview的大小
         webSettings.setLoadWithOverviewMode(true); // 缩放至屏幕的大小
@@ -437,6 +436,15 @@ public class WebViewActivity extends BaseActivity implements View.OnClickListene
         //其他细节操作
         webSettings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK); //关闭webview中缓存
         webSettings.setLoadsImagesAutomatically(true); //支持自动加载图片
+        webView.setWebViewClient(new com.tencent.smtt.sdk.WebViewClient() {
+            // 重写此方法表明点击网页里面的链接还是在当前的webview里跳转，不跳到浏览器那边
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                Log.d(TAG, "shouldOverrideUrlLoading: url = " + url);
+                view.loadUrl(url);
+                return true;
+            }
+        });
 //        webSettings.setDefaultTextEncodingName("utf-8");//设置编码格式
     }
 
@@ -453,7 +461,7 @@ public class WebViewActivity extends BaseActivity implements View.OnClickListene
         //先将控制变量进行初始化
         serialIDsIsFinish = false;
         webViewDataIsFinish = false;
-
+        mLastCommentId = "0";
         //加载数据
         String url = _URL.getHtmlContent(category, itemId);
         Log.d(TAG, "loadDetailContentById: URL = " + url);
@@ -505,25 +513,29 @@ public class WebViewActivity extends BaseActivity implements View.OnClickListene
                 Log.d(TAG, "loadCommentData onSuccess: responseBody = " + responseBody);
                 if (response.code() == 200) {
                     CommentRootData commentRootData = new Gson().fromJson(response.body(), CommentRootData.class);
-                    double commentCount = commentRootData.getData().getCount();
-                    Log.d(TAG, "loadCommentData : onSuccess: commentCount = " + commentCount);
-                    //获取评论列表
-                    if (mCommentDataList == null) {
-                        mCommentDataList = new ArrayList<>();
-                    }
-                    //添加数据前，list的长度
-                    int prevSize = mCommentDataList.size();
-                    Log.d(TAG, "loadCommentData onSuccess: 加载之前的评论列表长度 = " + prevSize);
-                    if (commentRootData.getData() != null) {
-                        mCommentDataList.addAll(commentRootData.getData().getData());
-                    } else {
-                        Toast.makeText(mContext, "已加载全部", Toast.LENGTH_SHORT).show();
-                    }
+                    if (commentRootData != null) {
+                        double commentCount = commentRootData.getData().getCount();
 
-                    Log.d(TAG, "loadCommentData onSuccess: 加载之后的评论列表长度 = " + mCommentDataList.size());
-                    mLastCommentId = mCommentDataList.get(mCommentDataList.size() - 1).getId();
-                    if (commentRVAdapter != null) {
-                        commentRVAdapter.notifyItemChanged(prevSize);
+                        Log.d(TAG, "loadCommentData : onSuccess: commentCount = " + commentCount);
+                        //获取评论列表
+                        if (mCommentDataList == null) {
+                            mCommentDataList = new ArrayList<>();
+                        }
+                        //添加数据前，list的长度
+                        int prevSize = mCommentDataList.size();
+                        Log.d(TAG, "loadCommentData onSuccess: 加载之前的评论列表长度 = " + prevSize);
+                        if (commentRootData.getData() != null) {
+                            mCommentDataList.addAll(commentRootData.getData().getData());
+                        } else {
+                            Toast.makeText(mContext, "已加载全部", Toast.LENGTH_SHORT).show();
+                        }
+
+                        Log.d(TAG, "loadCommentData onSuccess: 加载之后的评论列表长度 = " + mCommentDataList.size());
+                        mLastCommentId = mCommentDataList.get(mCommentDataList.size() - 1).getId();
+                        if (commentRVAdapter != null) {
+                            commentRVAdapter.notifyItemChanged(prevSize);
+                        }
+
                     }
                 }
             }

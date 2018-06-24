@@ -64,6 +64,9 @@ public class _URL {
             case 5:
                 categoryName = "movie";
                 break;
+            case 11:
+                categoryName = "topic";
+                break;
             default:
                 break;
         }
@@ -97,6 +100,9 @@ public class _URL {
                 break;
             case 5:
                 categoryName = "movie";
+                break;
+            case 11:
+                categoryName = "topic";
                 break;
             default:
                 break;
@@ -132,4 +138,17 @@ public class _URL {
      * 轮播图数据地址
      */
     public static String BANNER_DATA = "http://v3.wufazhuce.com:8000/api/banner/list/3?channel=cool";
+
+    /**
+     * 获取专题数据列表或则轮播图
+     * @param dataType 3 表示轮播图 ；4 表示纵向列表 ； 5 表示横向列表
+     * @param lastId 需要刷新或则加载更多的时候传的值，为上次列表的最后一项的id
+     * @return
+     */
+    public static String getTopicDataUrl(int dataType, int lastId) {
+        if (lastId == -1) {
+            lastId = 0;
+        }
+        return BASE_URL + "banner/list/" + dataType + "?last_id=" + lastId;
+    }
 }

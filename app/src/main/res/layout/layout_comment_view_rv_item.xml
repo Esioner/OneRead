@@ -2,14 +2,16 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:layout_marginBottom="10dp"
+    android:layout_marginEnd="20dp"
+    android:layout_marginStart="20dp"
+    android:background="#10000000"
     android:orientation="vertical">
 
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="5dp"
-        android:layout_marginEnd="20dp"
-        android:layout_marginStart="20dp"
         android:layout_marginTop="5dp">
 
         <de.hdodenhof.circleimageview.CircleImageView
@@ -42,9 +44,9 @@
         android:id="@+id/rl_comment_view_to_user"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="20dp"
-        android:layout_marginStart="50dp"
-        android:background="@android:color/darker_gray"
+        android:layout_marginBottom="5dp"
+        android:layout_marginStart="30dp"
+        android:background="#15000000"
         android:padding="5dp">
 
         <TextView
@@ -59,9 +61,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="5dp"
-        android:layout_marginEnd="20dp"
-        android:layout_marginStart="50dp"
-        android:layout_marginTop="5dp"
+        android:layout_marginStart="30dp"
         android:paddingBottom="5dp"
         android:paddingTop="5dp">
 
@@ -70,7 +70,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_toStartOf="@id/ll_comment_view_praise"
-
             android:text="做人亦是如此" />
 
         <LinearLayout

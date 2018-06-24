@@ -28,7 +28,11 @@
     * 评论界面使用 BottomSheetDialog 实现
     * 今天数据里出现一个 category = 6 的广告，暂且在加载的时候对 homePageDate 进行剔除
     * AllPage 中的轮播图完成
-* 2018 - 06 - 20
-
-
+* 2018 - 06 - 22
+    * 修复在连载页面点击下一章或则上一章导致的闪退（是由于 lastcommentId没有重置为0导致的）
+    * 集成腾讯X5内核
+* 2018 - 06 - 23 
+    * AllPager 页面使用 tablayout + viewpager 来进行展示，并封装了一个可以实现懒加载的 fragment ，通过 setUserVisibleHint() 这个方法来判断当前fragment是否可见，此时会出现一个问题：就是第一个fragment还没初始化完成，setUserVisibleHint() 这个方法就会执行过一遍，解决方法将 isFirst这个值不要在 setUserVisibleHint 这个方法里制反，在数据加载完成后再进行制反
+* 2018 - 06 - 24
+    * 新增阅读、音乐、影视页面
 

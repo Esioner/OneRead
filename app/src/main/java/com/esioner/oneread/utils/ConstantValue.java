@@ -23,6 +23,17 @@ public interface ConstantValue {
      */
     String GET_LOCATION_TIME = "GET_LOCATION_TIME";
 
-
+    /**
+     * 表示是 viewpager 的数据
+     */
+    int TYPE_VIEWPAGER_DATA = 3;
+    /**
+     * 表示是纵向列表的数据类型
+     */
+    int TYPE_VERTICAL_RV_DATA = 4;
+    /**
+     * 表示是横向列表的数据类型
+     */
+    int TYPE_HORIZONTAL_RV_DATA = 5;
 
 }
